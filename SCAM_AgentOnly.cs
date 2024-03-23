@@ -66,7 +66,7 @@ static class Variables
 		{ "cargo-full-factor", new Variable<float> { value = 0.8f, parser = s => float.Parse(s) } },
 		{ "battery-low-factor", new Variable<float> { value = 0.2f, parser = s => float.Parse(s) } },
 		{ "battery-full-factor", new Variable<float> { value = 0.8f, parser = s => float.Parse(s) } },
-		{ "gas-low-factor", new Variable<float> { value = 0.2f, parser = s => float.Parse(s) } },
+		{ "gas-low-factor", new Variable<float> { value = 0.3f, parser = s => float.Parse(s) } },
 		{ "speed-clear", new Variable<float> { value = 2f, parser = s => float.Parse(s) } },
 		{ "speed-drill", new Variable<float> { value = 0.6f, parser = s => float.Parse(s) } },
 		{ "roll-power-factor", new Variable<float> { value = 1f, parser = s => float.Parse(s) } },
@@ -1478,7 +1478,7 @@ public class MinerController
 	bool CheckBatteriesAndIntegrityThrottled(float desiredBatteryLevel, float desiredGasLevel)
 	{
 		var dtNow = DateTime.Now;
-		if ((dtNow - lastCheckStamp).TotalSeconds > 60)
+		if ((dtNow - lastCheckStamp).TotalSeconds > 15)
 		{
 			lastCheckStamp = dtNow;
 			return CheckBatteriesAndIntegrity(desiredBatteryLevel, desiredGasLevel);
