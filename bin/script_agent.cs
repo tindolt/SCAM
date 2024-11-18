@@ -10,9 +10,7 @@
  * 
  * Instructions on Github: https://github.com/ManuelSchmitz/SCAM/tree/main
  */
-
 const string Ver = "0.11.1"; // Must be the same on dispatcher and agents.
-
 static long DbgIgc = 0;
 //static long DbgIgc = 76932813351402441; // pertam
 //static long DbgIgc = 141426525525683227; // space
