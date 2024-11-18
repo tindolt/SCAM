@@ -10,9 +10,7 @@
  * 
  * Instructions on Github: https://github.com/ManuelSchmitz/SCAM/tree/main
  */
-
-const string Ver = "0.11.0"; // Must be the same on dispatcher and agents.
-
+const string Ver = "0.11.1"; // Must be the same on dispatcher and agents.
 static long DbgIgc = 0;
 //static long DbgIgc = 76932813351402441; // pertam
 //static long DbgIgc = 141426525525683227; // space
@@ -20,7 +18,7 @@ static bool IsLargeGrid;
 static double Dt = 1 / 60f;
 static float MAX_SP = 104.38f;
 const float G = 9.81f;
-const string DockHostTag = "docka-min3r";
+const string DockHostTag = "min3r-dockd";
 const string ForwardGyroTag = "forward-gyro";
 
 static float StoppingPowerQuotient = 0.5f;
