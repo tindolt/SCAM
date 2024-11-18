@@ -1,9 +1,7 @@
 ## Getting Started
-
 [Here](doc/tutorial/step1.md) is a beginner's tutorial.
 
 ## Updating from v0.9.68 <a name="update"/>
-
 1. Recall all agents.
 2. Remove the following commands from your startup scripts (Custom Data of the PBs). They are not supported any more,
 	- `command:set-value:depth-limit` - Now set on the LCD screen menu.
@@ -17,6 +15,8 @@
 	- `command:set-value:echelon-offset` - Now set on the LCD screen menu.
 3. Copy the [dispatcher script](bin/script_dispatcher.cs) to the dispatcher and recompile.
 4. Copy the [agent script](bin/script_agent.cs) to all agents and recompile.
+
+# Updated dock name to prevent  confusion with other automation scripts that used docka
 
 ## Definitions
 
