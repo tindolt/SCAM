@@ -3242,8 +3242,8 @@ public class PillockController
 	int currentTick;
 	IMyGyro forwardGyro;
 	IMyTerminalBlock MainAntenna;
-	public IMyTerminalBlock Fw { get { return forwardGyro; } }
-	public Vector3D Destination;
+	public IMyTerminalBlock Fw => forwardGyro;
+    public Vector3D Destination;
 	public Vector3D Pip;
 	public Vector3D ThrustDest;
 	public Vector3D PosShift;
