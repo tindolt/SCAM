@@ -3168,15 +3168,22 @@ public class PillockController
 
 	State state = State.Disabled;
 	public void SetState(State newState)
-	{
-		if (newState == State.WP)
-			TakeControl();
-		else if (newState == State.Inert)
-			ReleaseControl(false);
-		else if (newState == State.Disabled)
-			ReleaseControl();
-		state = newState;
-	}
+    {
+        switch (newState)
+        {
+            case State.WP:
+                TakeControl();
+                break;
+            case State.Inert:
+                ReleaseControl(false);
+                break;
+            case State.Disabled:
+                ReleaseControl();
+                break;
+        }
+
+        state = newState;
+    }
 
 	public void TrySetState(string stateName)
 	{
