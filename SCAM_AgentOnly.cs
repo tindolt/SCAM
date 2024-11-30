@@ -1202,8 +1202,8 @@ public class MinerController
                         f_cargo_max = Variables.Get<float>("cargo-full-factor"),
                         bAdaptive = Toggle.C.Check("adaptive-mining"),
                         bRecalled = pState.bRecalled,
-                        t_shaft = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f,
-                        t_ore = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f,
+                        t_shaft = CurrentJob?.GetCurrentDepth() ?? 0f,
+                        t_ore = CurrentJob?.lastFoundOreDepth ?? 0f,
                         bUnload = bUnloading,
                         name = me.CubeGrid.CustomName
                     };
