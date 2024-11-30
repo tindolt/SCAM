@@ -2570,7 +2570,7 @@ public static class E
 	{
 		if (!string.IsNullOrEmpty(buff))
 		{
-			var h = UserCtrlTest.ctrls.Where(x => x.IsUnderControl).FirstOrDefault() as IMyTextSurfaceProvider;
+			var h = UserCtrlTest.ctrls.FirstOrDefault(x => x.IsUnderControl) as IMyTextSurfaceProvider;
 			if ((h != null) && (h.SurfaceCount > 0))
 				h.GetSurface(0).WriteText(buff);
 			buff = "";
