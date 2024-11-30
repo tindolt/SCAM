@@ -2516,26 +2516,17 @@ string FormatNumberToNeatString(float value, string measure = "")
 {
 	string valueString;
 	if (Math.Abs(value) >= 1000000)
-	{
-		if (!string.IsNullOrEmpty(measure))
-			valueString = string.Format("{0:0.##} M{1}", value / 1000000, measure);
-		else
-			valueString = string.Format("{0:0.##}M", value / 1000000);
-	}
+    {
+        valueString = !string.IsNullOrEmpty(measure) ? $"{value / 1000000:0.##} M{measure}" : $"{value / 1000000:0.##}M";
+    }
 	else if (Math.Abs(value) >= 1000)
-	{
-		if (!string.IsNullOrEmpty(measure))
-			valueString = string.Format("{0:0.##} k{1}", value / 1000, measure);
-		else
-			valueString = string.Format("{0:0.##}k", value / 1000);
-	}
+    {
+        valueString = !string.IsNullOrEmpty(measure) ? $"{value / 1000:0.##} k{measure}" : $"{value / 1000:0.##}k";
+    }
 	else
-	{
-		if (!string.IsNullOrEmpty(measure))
-			valueString = string.Format("{0:0.##} {1}", value, measure);
-		else
-			valueString = string.Format("{0:0.##}", value);
-	}
+    {
+        valueString = !string.IsNullOrEmpty(measure) ? $"{value:0.##} {measure}" : $"{value:0.##}";
+    }
 	return valueString;
 }
 
