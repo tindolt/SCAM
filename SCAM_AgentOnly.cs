@@ -396,18 +396,6 @@ void CreateRole()
 	}
 }
 
-static void AddUniqueItem<T>(T item, IList<T> c) where T : class
-{
-	if ((item != null) && !c.Contains(item))
-		c.Add(item);
-}
-
-public void BroadcastToChannel<T>(string tag, T data)
-{
-	var channel = IGC.RegisterBroadcastListener(tag);
-	IGC.SendBroadcastMessage(channel.Tag, data, TransmissionDistance.TransmissionDistanceMax);
-}
-
 public void Log(string msg)
 {
 	E.DebugLog(msg);
