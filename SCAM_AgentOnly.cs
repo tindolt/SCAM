@@ -1051,12 +1051,14 @@ public class MinerController
         CurrentJob?.UpdateReport(report, pState.MinerState);
 
 		/* Assemble the data content for the handshake. */
-		var data = new MyTuple<string,MyTuple<MyTuple<long, string>, MyTuple<MatrixD, Vector3D>, MyTuple<byte, string, bool>, ImmutableArray<float>, MyTuple<bool, bool, float, float>, ImmutableArray<MyTuple<string, string>>>, string>();
-		data.Item1 = Variables.Get<string>("group-constraint");
-		data.Item2 = report.ToIgc();
-		data.Item3 = Ver;
+		var data = new MyTuple<string,MyTuple<MyTuple<long, string>, MyTuple<MatrixD, Vector3D>, MyTuple<byte, string, bool>, ImmutableArray<float>, MyTuple<bool, bool, float, float>, ImmutableArray<MyTuple<string, string>>>, string>
+            {
+                Item1 = Variables.Get<string>("group-constraint"),
+                Item2 = report.ToIgc(),
+                Item3 = Ver
+            };
 
-		BroadcastToChannel("miners.handshake", data);
+            BroadcastToChannel("miners.handshake", data);
 	}
 
 	public void Handle(List<MyIGCMessage> uniMsgs)
