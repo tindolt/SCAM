@@ -424,6 +424,7 @@ public enum MinerState : byte
 	Docking              = 15  ///< Descending to the docking port through shared airspace. (docking final approach)
 }
 
+// TODO: Is this for a planned feature because it is unused.
 public enum ShaftState { Planned, InProgress, Complete, Cancelled }
 
 public enum ApckState
