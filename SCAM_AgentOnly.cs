@@ -621,7 +621,7 @@ public class PersistentState
 
 	string Serialize()
 	{
-		var pairs = new string[]
+		var pairs = new[]
 		{
 			"LifetimeAcceptedTasks=" + LifetimeAcceptedTasks,
 			"LifetimeOperationTime=" + LifetimeOperationTime,
