@@ -2287,14 +2287,15 @@ public class MinerController
 		{
 			/* Count all ore on board. */
 			float totalAmount = 0;
-			for (var i = 0; i < c.allContainers.Count; ++i) {
-				var inv = c.allContainers[i].GetInventory(0);
-				if (inv == null)
-					continue;
-				var items = new List<MyInventoryItem>();
-				inv.GetItems(items);
-				items.Where(ix => ix.Type.ToString().Contains("Ore") && !ix.Type.ToString().Contains("Stone")).ToList().ForEach(x => totalAmount += (float)x.Amount);
-			}
+			foreach (var container in c.allContainers)
+            {
+                var inv = container.GetInventory(0);
+                if (inv == null)
+                    continue;
+                var items = new List<MyInventoryItem>();
+                inv.GetItems(items);
+                items.Where(ix => ix.Type.ToString().Contains("Ore") && !ix.Type.ToString().Contains("Stone")).ToList().ForEach(x => totalAmount += (float)x.Amount);
+            }
 
 			var gain = ((prevTickValCount > 0) && (totalAmount > prevTickValCount));
 
