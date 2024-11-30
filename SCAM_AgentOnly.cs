@@ -1008,10 +1008,7 @@ public class MinerController
 	public void CreateTask()
 	{
 		var ng = remCon.GetNaturalGravity();
-		if (ng != Vector3D.Zero)
-			pState.miningPlaneNormal = Vector3D.Normalize(ng);
-		else
-			pState.miningPlaneNormal = fwReferenceBlock.WorldMatrix.Forward;
+		pState.miningPlaneNormal = ng != Vector3D.Zero ? Vector3D.Normalize(ng) : fwReferenceBlock.WorldMatrix.Forward;
 
 		double elevation;
 		if (remCon.TryGetPlanetElevation(MyPlanetElevation.Surface, out elevation))
