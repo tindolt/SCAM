@@ -299,7 +299,7 @@ void Ctor()
 					"low-update-rate", (parts) => Runtime.UpdateFrequency = UpdateFrequency.Update10
 				},
 				{
-					"create-task-raycast", (parts) => RaycastTaskHandler(parts)
+					"create-task-raycast", RaycastTaskHandler
 				},
 				{
 					//TODO: Rename "recall".
