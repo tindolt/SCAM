@@ -1118,98 +1118,99 @@ public class MinerController
 
 			//"miners.handshake.reply"
 
-			if (msg.Tag == "miners.handshake.reply")
-			{
-				Log("Received reply from dispatcher " + msg.Source);
-				DispatcherId = msg.Source;
-			}
-
-			if (msg.Tag == "miners.normal")
-			{
-				var normal = (Vector3D)msg.Data;
-				Log("Was assigned a normal of " + normal);
-				pState.miningPlaneNormal = normal;
-			}
-
-			if (msg.Tag == "miners.resume")
-			{
-				var normal = (Vector3D)msg.Data;
-				Log("Received resume command. Clearing state, running MineCommandHandler, assigned a normal of " + normal);
-				stateWrapper.ClearPersistentState();
-				pState.miningPlaneNormal = normal;
-				MineCommandHandler();
-			}
-
-			if (msg.Tag == "command")
+			switch (msg.Tag)
             {
-                switch (msg.Data.ToString())
+                case "miners.handshake.reply":
+                    Log("Received reply from dispatcher " + msg.Source);
+                    DispatcherId = msg.Source;
+                    break;
+                case "miners.normal":
                 {
-                    case "force-finish":
-                        FinishAndDockHandler();
-                        break;
-                    case "mine":
-                        MineCommandHandler();
-                        break;
+                    var normal = (Vector3D)msg.Data;
+                    Log("Was assigned a normal of " + normal);
+                    pState.miningPlaneNormal = normal;
+                    break;
+                }
+                case "miners.resume":
+                {
+                    var normal = (Vector3D)msg.Data;
+                    Log("Received resume command. Clearing state, running MineCommandHandler, assigned a normal of " + normal);
+                    stateWrapper.ClearPersistentState();
+                    pState.miningPlaneNormal = normal;
+                    MineCommandHandler();
+                    break;
+                }
+                case "command":
+                    switch (msg.Data.ToString())
+                    {
+                        case "force-finish":
+                            FinishAndDockHandler();
+                            break;
+                        case "mine":
+                            MineCommandHandler();
+                            break;
+                    }
+
+                    break;
+                case "set-value":
+                {
+                    var parts = ((string)msg.Data).Split(':');
+                    Log($"Set value '{parts[0]}' to '{parts[1]}'");
+                    Variables.Set(parts[0], parts[1]);
+                    break;
+                }
+                case "miners":
+                {
+                    if (!(msg.Data is MyTuple<string, Vector3D, Vector3D>)) {
+                        Log("Ignoring granted lock with malformed data.");
+                        continue;
+                    }
+                    var data = (MyTuple<string, Vector3D, Vector3D>)msg.Data;
+                    pState.p_FL = data.Item2;
+                    pState.n_FL = data.Item3;
+
+                    if (!string.IsNullOrEmpty(ObtainedLock) && (ObtainedLock != data.Item1)) {
+                        //ReleaseLock(ObtainedLock);
+                        Log($"{data.Item1} common-airspace-lock hides current ObtainedLock {ObtainedLock}!");
+                    }
+                    ObtainedLock = data.Item1;
+                    Log(data.Item1 + " common-airspace-lock-granted");
+
+                    // can fly!
+                    // ("general" also covers "mining-site")
+                    if (   WaitedSection == data.Item1
+                           || (WaitedSection == LOCK_NAME_MiningSection && data.Item1 == LOCK_NAME_GeneralSection))
+                        Dispatch();
+                    break;
+                }
+                case "report.request":
+                {
+                    /* Progress report requested, compile and send the report. */
+                    var damBlck = allFunctionalBlocks.FirstOrDefault(b => !b.IsFunctional); // Damaged block, if exists.
+                    var report = new TransponderMsg();
+                    report.Id          = IGC.Me;
+                    report.WM          = fwReferenceBlock.WorldMatrix;
+                    report.v           = remCon.GetShipVelocities().LinearVelocity;
+                    report.f_bat       = batteryCharge_cached;
+                    report.f_bat_min   = Variables.Get<float>("battery-low-factor");
+                    report.f_fuel      = fuelLevel_cached;
+                    report.f_fuel_min  = Variables.Get<float>("gas-low-factor");
+                    report.damage      = (damBlck != null ? damBlck.CustomName : "");
+                    report.state       = pState.MinerState;
+                    report.f_cargo     = cargoFullness_cached;
+                    report.f_cargo_max = Variables.Get<float>("cargo-full-factor");
+                    report.bAdaptive   = Toggle.C.Check("adaptive-mining");
+                    report.bRecalled   = pState.bRecalled;
+                    report.t_shaft     = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f;
+                    report.t_ore       = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f;
+                    report.bUnload     = bUnloading;
+                    report.name        = me.CubeGrid.CustomName;
+                    CurrentJob?.UpdateReport(report, pState.MinerState);
+                    IGC.SendBroadcastMessage("miners.report", report.ToIgc());
+                    break;
                 }
             }
-
-			if (msg.Tag == "set-value")
-			{
-				var parts = ((string)msg.Data).Split(':');
-				Log($"Set value '{parts[0]}' to '{parts[1]}'");
-				Variables.Set(parts[0], parts[1]);
-			}
-
-			if (msg.Tag == "miners")
-			{
-				if (!(msg.Data is MyTuple<string, Vector3D, Vector3D>)) {
-					Log("Ignoring granted lock with malformed data.");
-					continue;
-				}
-				var data = (MyTuple<string, Vector3D, Vector3D>)msg.Data;
-				pState.p_FL = data.Item2;
-				pState.n_FL = data.Item3;
-
-				if (!string.IsNullOrEmpty(ObtainedLock) && (ObtainedLock != data.Item1)) {
-					//ReleaseLock(ObtainedLock);
-					Log($"{data.Item1} common-airspace-lock hides current ObtainedLock {ObtainedLock}!");
-				}
-				ObtainedLock = data.Item1;
-				Log(data.Item1 + " common-airspace-lock-granted");
-
-				// can fly!
-				// ("general" also covers "mining-site")
-				if (   WaitedSection == data.Item1
-					|| (WaitedSection == LOCK_NAME_MiningSection && data.Item1 == LOCK_NAME_GeneralSection))
-					Dispatch();
-			}
-
-			if (msg.Tag == "report.request")
-			{
-				/* Progress report requested, compile and send the report. */
-				var damBlck = allFunctionalBlocks.FirstOrDefault(b => !b.IsFunctional); // Damaged block, if exists.
-				var report = new TransponderMsg();
-				report.Id          = IGC.Me;
-				report.WM          = fwReferenceBlock.WorldMatrix;
-				report.v           = remCon.GetShipVelocities().LinearVelocity;
-				report.f_bat       = batteryCharge_cached;
-				report.f_bat_min   = Variables.Get<float>("battery-low-factor");
-				report.f_fuel      = fuelLevel_cached;
-				report.f_fuel_min  = Variables.Get<float>("gas-low-factor");
-				report.damage      = (damBlck != null ? damBlck.CustomName : "");
-				report.state       = pState.MinerState;
-				report.f_cargo     = cargoFullness_cached;
-				report.f_cargo_max = Variables.Get<float>("cargo-full-factor");
-				report.bAdaptive   = Toggle.C.Check("adaptive-mining");
-				report.bRecalled   = pState.bRecalled;
-				report.t_shaft     = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f;
-				report.t_ore       = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f;
-				report.bUnload     = bUnloading;
-				report.name        = me.CubeGrid.CustomName;
-				CurrentJob?.UpdateReport(report, pState.MinerState);
-				IGC.SendBroadcastMessage("miners.report", report.ToIgc());
-			}
-		}
+        }
 
 		while (minerChannel.HasPendingMessage)
 		{
