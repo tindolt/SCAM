@@ -556,7 +556,7 @@ public class PersistentState
         if (typeof(T) == typeof(List<byte>))
         {
             var d = res.Split(':');
-            return (T)(object)d.Select(x => byte.Parse(x)).ToList();
+            return (T)(object)d.Select(byte.Parse).ToList();
         }
         if (typeof(T) == typeof(MinerState))
         {
