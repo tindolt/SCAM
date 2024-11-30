@@ -2341,7 +2341,7 @@ static class VectorOpsHelper
 		return sb.ToString().TrimEnd(':');
 	}
 
-	public static Vector3D GetTangFreeDestinantion(MatrixD myMatrix, Vector3D pointTomove, BoundingSphereD dangerZone)
+	public static Vector3D GetTangFreeDestination(MatrixD myMatrix, Vector3D pointTomove, BoundingSphereD dangerZone)
 	{
 		var r = new RayD(myMatrix.Translation, Vector3D.Normalize(pointTomove - myMatrix.Translation));
 		var collideDist = r.Intersects(dangerZone);
@@ -2988,7 +2988,7 @@ public class FSM
 			PositionShifter = p =>
 			{
 				var bs = new BoundingSphereD(GetNTV("wingman").OrientationUnit.Value.Translation, 30);
-				return VectorOpsHelper.GetTangFreeDestinantion(PC.Fw.WorldMatrix, p, bs);
+				return VectorOpsHelper.GetTangFreeDestination(PC.Fw.WorldMatrix, p, bs);
 			},
 			TranslationOverride = () => PC.Fw.GetPosition()
 		};
