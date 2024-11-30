@@ -3265,10 +3265,7 @@ public class PillockController
 		Vector3D planetPos;
 		RemCon.TryGetPlanetPosition(out planetPos);
 
-		Func<Vector3D> approachVelocity = null; // for PIP
-		var fRoll = false;
-		float? speedLimit = null;
-		TargetTelemetry currentTargetVectors = null;
+        TargetTelemetry currentTargetVectors = null;
 
 		switch (state)
 		{
@@ -3288,13 +3285,13 @@ public class PillockController
 
 					var av = Vector3D.TransformNormal(RemCon.GetShipVelocities().AngularVelocity, MatrixD.Transpose(Fw.WorldMatrix));
 					av = new Vector3D(Math.Abs(av.X), Math.Abs(av.Y), Math.Abs(av.Z));
-					var anacc = (av - prevAng) / Dt;
+					var anacc = (av - prevAng) / Dt; //TODO: this is never used.
 					prevAng = av;
 
-					approachVelocity = wp.ApproachVelocity;
+					var approachVelocity = wp.ApproachVelocity; // for PIP
 					var aimpointShifter = wp.AimpointShifter;
-					fRoll = wp.fRoll;
-					speedLimit = wp.SpeedLimit;
+					var fRoll = wp.fRoll;
+					var speedLimit = wp.SpeedLimit;
 					if (wp.TargetFeed != null)
 						currentTargetVectors = wp.TargetFeed();
 
