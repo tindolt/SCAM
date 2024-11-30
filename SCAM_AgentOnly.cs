@@ -1064,7 +1064,7 @@ public class MinerController
 	public void Handle(List<MyIGCMessage> uniMsgs)
 	{
 		/* Update some expensive quantities. */
-		UpdateBatteryCharge(); // TODO: Maybe not necessary to update on every cycle
+		UpdateBatteryCharge(); // TODO: Maybe not necessary to update on every cycle. // Indeed but drones with small battery capacity might be afflicted by this.
 		UpdateFuelLevel();
 		switch (pState.MinerState) {
 		default:
