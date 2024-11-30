@@ -1533,14 +1533,14 @@ public class MinerController
 				var r = new System.Text.RegularExpressions.Regex(pattern);
 				taggedName = r.Replace(
 					name,
-					delegate (System.Text.RegularExpressions.Match m)
-					{
+					delegate
+                    {
 						return (health * 100).ToString("F0");
 					});
 			}
 			else
 			{
-				taggedName = string.Format("{0} || DAMAGED: {1}%", name, health.ToString("F0"));
+				taggedName = $"{name} || DAMAGED: {health:F0}%";
 				Log($"{name} was damaged. Showing on HUD.");
 			}
 			myTerminalBlock.CustomName = taggedName;
