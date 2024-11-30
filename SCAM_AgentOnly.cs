@@ -1315,9 +1315,11 @@ public class MinerController
 
 	public void ResumeJobOnWorldLoad()
 	{
-		CurrentJob = new MiningJob(this);
-		CurrentJob.SessionStartedAt = DateTime.Now;
-		// TODO: restore some stats stuff
+		CurrentJob = new MiningJob(this)
+        {
+            SessionStartedAt = DateTime.Now
+        };
+        // TODO: restore some stats stuff
 	}
 
 	public void MineCommandHandler()
