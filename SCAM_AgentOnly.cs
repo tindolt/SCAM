@@ -1753,366 +1753,378 @@ public class MinerController
 		 */
 		public void HandleState(MinerState state)
 		{
-			if (state == MinerState.GoingToEntry) {
+			switch (state)
+            {
+                case MinerState.GoingToEntry:
+                {
+                    /* Have we been ordered back to base? */
+                    if (c.pState.bRecalled) {
+                        c.SetState(MinerState.GoingToUnload);
+                        c.drills.ForEach(d => d.Enabled = false);
+                        var pt = CalcShaftAbovePoint();
+                        c.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
+                        c.pState.currentWp = pt;
+                        return;
+                    }
 
-				/* Have we been ordered back to base? */
-				if (c.pState.bRecalled) {
-					c.SetState(MinerState.GoingToUnload);
-					c.drills.ForEach(d => d.Enabled = false);
-					var pt = CalcShaftAbovePoint();
-					c.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
-					c.pState.currentWp = pt;
-					return;
-				}
+                    if (!CurrentWpReached(0.5f))
+                        return; // We are not there yet. Keep descending.
 
-				if (!CurrentWpReached(0.5f))
-					return; // We are not there yet. Keep descending.
-
-				/* We just left controlled airspace. Release the lock ("mining-site"
+                    /* We just left controlled airspace. Release the lock ("mining-site"
 				 * or "general", whatever we have been granted).                      */
-				c.ReleaseLock(c.ObtainedLock);
+                    c.ReleaseLock(c.ObtainedLock);
 
-				/* Switch on the drills, if not running already. */
-				c.drills.ForEach(d => d.Enabled = true);
+                    /* Switch on the drills, if not running already. */
+                    c.drills.ForEach(d => d.Enabled = true);
 
-				/* Descend into the shaft. */
-				c.SetState(MinerState.Drilling);
-				//c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward,SpeedLimit=0.6:0:0:0");
-				c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward" +
-					",AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';') +
-					",UpNormal=1;0;0,SpeedLimit=" + Variables.Get<float>("speed-drill") + ":0:0:0");
+                    /* Descend into the shaft. */
+                    c.SetState(MinerState.Drilling);
+                    //c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward,SpeedLimit=0.6:0:0:0");
+                    c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward" +
+                                         ",AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';') +
+                                         ",UpNormal=1;0;0,SpeedLimit=" + Variables.Get<float>("speed-drill") + ":0:0:0");
+                    break;
+                }
+                case MinerState.Drilling:
+                {
+                    /* Update some reporting stuff. */
+                    var currentDepth = GetCurrentDepth();
+                    E.Echo($"Depth: current: {currentDepth:f1} skip: {c.pState.skipDepth:f1}");
+                    E.Echo($"Depth: least: {c.pState.leastDepth:f1} max: {c.pState.maxDepth:f1}");
+                    E.Echo($"Cargo: {c.cargoFullness_cached:f2} / " + Variables.Get<float>("cargo-full-factor").ToString("f2"));
 
-			} else if (state == MinerState.Drilling) {
-
-				/* Update some reporting stuff. */
-				var currentDepth = GetCurrentDepth();
-				E.Echo($"Depth: current: {currentDepth:f1} skip: {c.pState.skipDepth:f1}");
-				E.Echo($"Depth: least: {c.pState.leastDepth:f1} max: {c.pState.maxDepth:f1}");
-				E.Echo($"Cargo: {c.cargoFullness_cached:f2} / " + Variables.Get<float>("cargo-full-factor").ToString("f2"));
-
-				if (c.pState.bRecalled) {
-					GetOutTheShaft(); // We have been ordered back to base.
-					return;
-				}
+                    if (c.pState.bRecalled) {
+                        GetOutTheShaft(); // We have been ordered back to base.
+                        return;
+                    }
 						
-				if (currentDepth > c.pState.maxDepth) {
-					GetOutTheShaft(); // We have reached max depth, job complete.
-					return;
-				}
+                    if (currentDepth > c.pState.maxDepth) {
+                        GetOutTheShaft(); // We have reached max depth, job complete.
+                        return;
+                    }
 
-				if (!c.CheckBatteriesAndIntegrityThrottled(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor"))) {
-					GetOutTheShaft(); // We need to return to base for maintenance reasons. 
-					return;          //TODO: Emit MAYDAY if docking port is damaged or we cannot make it back to base for other reasons.
-				}
+                    if (!c.CheckBatteriesAndIntegrityThrottled(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor"))) {
+                        GetOutTheShaft(); // We need to return to base for maintenance reasons. 
+                        return;          //TODO: Emit MAYDAY if docking port is damaged or we cannot make it back to base for other reasons.
+                    }
 
-				if (c.CargoIsFull()) {
-					GetOutTheShaft(); // Cargo full, return to base.
-					return;
-				}
+                    if (c.CargoIsFull()) {
+                        GetOutTheShaft(); // Cargo full, return to base.
+                        return;
+                    }
 
-				if (currentDepth <= c.pState.skipDepth) {
-					c.drills.ForEach(d => d.UseConveyorSystem = false);
-					return;
-				}
+                    if (currentDepth <= c.pState.skipDepth) {
+                        c.drills.ForEach(d => d.UseConveyorSystem = false);
+                        return;
+                    }
 				
-				// skipped surface layer, checking for ore and caring about cargo level
-				c.drills.ForEach(d => d.UseConveyorSystem = true);
+                    // skipped surface layer, checking for ore and caring about cargo level
+                    c.drills.ForEach(d => d.UseConveyorSystem = true);
 
-				var bValOre = CargoIsGettingValuableOre();
-				if (bValOre)
-					lastFoundOreDepth = Math.Max(currentDepth, lastFoundOreDepth ?? 0);
+                    var bValOre = CargoIsGettingValuableOre();
+                    if (bValOre)
+                        lastFoundOreDepth = Math.Max(currentDepth, lastFoundOreDepth ?? 0);
 
-				if (currentDepth <= c.pState.leastDepth)
-					return;
+                    if (currentDepth <= c.pState.leastDepth)
+                        return;
 
-				if (bValOre) {
-					if ((!MinFoundOreDepth.HasValue) || (MinFoundOreDepth > currentDepth))
-						MinFoundOreDepth = currentDepth;
-					if ((!MaxFoundOreDepth.HasValue) || (MaxFoundOreDepth < currentDepth))
-						MaxFoundOreDepth = currentDepth;
-					if (Toggle.C.Check("adaptive-mining")) {
-						c.pState.skipDepth = MinFoundOreDepth.Value - 2f;
-						c.pState.maxDepth = MaxFoundOreDepth.Value + 2f;
-					}
-				}
-				else
-				{
-					/* Give up drilling 2 m below the last valuable ore. */
-					if (lastFoundOreDepth.HasValue && (currentDepth - lastFoundOreDepth > 2)) {
-						GetOutTheShaft(); // No more ore expected in this shaft, job complete.
-					}
-				}
-			}
-			
-			if (state == MinerState.AscendingInShaft) {
+                    if (bValOre) {
+                        if ((!MinFoundOreDepth.HasValue) || (MinFoundOreDepth > currentDepth))
+                            MinFoundOreDepth = currentDepth;
+                        if ((!MaxFoundOreDepth.HasValue) || (MaxFoundOreDepth < currentDepth))
+                            MaxFoundOreDepth = currentDepth;
+                        if (Toggle.C.Check("adaptive-mining")) {
+                            c.pState.skipDepth = MinFoundOreDepth.Value - 2f;
+                            c.pState.maxDepth = MaxFoundOreDepth.Value + 2f;
+                        }
+                    }
+                    else
+                    {
+                        /* Give up drilling 2 m below the last valuable ore. */
+                        if (lastFoundOreDepth.HasValue && (currentDepth - lastFoundOreDepth > 2)) {
+                            GetOutTheShaft(); // No more ore expected in this shaft, job complete.
+                        }
+                    }
 
-				if (!CurrentWpReached(0.5f))
-					return; // We have not reached the top of the shaft yet.
+                    break;
+                }
+                case MinerState.AscendingInShaft:
+                {
+                    if (!CurrentWpReached(0.5f))
+                        return; // We have not reached the top of the shaft yet.
 						
-				// kinda expensive
-				if (c.pState.bRecalled || c.CargoIsFull() || !c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor")))
-				{
-					// we reached cargo limit
-					c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
-					{
-						mc.SetState(MinerState.GoingToUnload);
-						mc.drills.ForEach(d => d.Enabled = false);
-						var pt = CalcShaftAbovePoint();
-						mc.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
-						c.pState.currentWp = pt;
-					});
-				}
-				else
-					/* Current job is done, request a new one. */
-					SkipShaft();
+                    // kinda expensive
+                    if (c.pState.bRecalled || c.CargoIsFull() || !c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor")))
+                    {
+                        // we reached cargo limit
+                        c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
+                        {
+                            mc.SetState(MinerState.GoingToUnload);
+                            mc.drills.ForEach(d => d.Enabled = false);
+                            var pt = CalcShaftAbovePoint();
+                            mc.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
+                            c.pState.currentWp = pt;
+                        });
+                    }
+                    else
+                        /* Current job is done, request a new one. */
+                        SkipShaft();
 
-			} else if (state == MinerState.ChangingShaft) {
-
-				// triggered 15m above old mining entry
-				if (!CurrentWpReached(0.5f))
-					return; // Not reached the point above the shaft yet. Keep flying.
+                    break;
+                }
+                case MinerState.ChangingShaft:
+                {
+                    // triggered 15m above old mining entry
+                    if (!CurrentWpReached(0.5f))
+                        return; // Not reached the point above the shaft yet. Keep flying.
 				
-				var pt = CalcShaftAbovePoint();
-				c.CommandAutoPillock("command:create-wp:Name=ChangingShaft (Traverse),Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
-				c.pState.currentWp = pt;
-				c.SetState(MinerState.ReturningToShaft);
-				c.ReleaseLock(c.ObtainedLock);
-			}
+                    var pt = CalcShaftAbovePoint();
+                    c.CommandAutoPillock("command:create-wp:Name=ChangingShaft (Traverse),Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
+                    c.pState.currentWp = pt;
+                    c.SetState(MinerState.ReturningToShaft);
+                    c.ReleaseLock(c.ObtainedLock);
+                    break;
+                }
+                case MinerState.Takeoff:
+                {
+                    if (!CurrentWpReached(1.0f))
+                        return; // Not reached the point above the docking port yet. Keep flying.
 
-			if (state == MinerState.Takeoff)
-			{
-				if (!CurrentWpReached(1.0f))
-					return; // Not reached the point above the docking port yet. Keep flying.
+                    /* If received recall order while taking off, keep the lock and land again. */
+                    //TODO: ATC has probably re-assigned the docking port already.
+                    //      Have the dispatcher keep the docking port reserved, until the airspace lock is returned after takeoff.
+                    //if (c.pState.bRecalled) {
+                    //	return;
+                    //}
 
-				/* If received recall order while taking off, keep the lock and land again. */
-				//TODO: ATC has probably re-assigned the docking port already.
-				//      Have the dispatcher keep the docking port reserved, until the airspace lock is returned after takeoff.
-				//if (c.pState.bRecalled) {
-				//	return;
-				//}
+                    /* Release the "general" or "base" airspace lock, if held. */
+                    if (c.ObtainedLock != null)
+                        c.ReleaseLock(c.ObtainedLock);
 
-				/* Release the "general" or "base" airspace lock, if held. */
-				if (c.ObtainedLock != null)
-					c.ReleaseLock(c.ObtainedLock);
+                    //TODO: This is a quick fix, because we need ATC to assign a new docking port.
+                    //      Fix this, see above.
+                    if (c.pState.bRecalled) {
+                        c.ArrangeDocking();
+                        return;
+                    }
 
-				//TODO: This is a quick fix, because we need ATC to assign a new docking port.
-				//      Fix this, see above.
-				if (c.pState.bRecalled) {
-					c.ArrangeDocking();
-					return;
-				}
+                    /* Lay in a course to above the shaft. */
 
-				/* Lay in a course to above the shaft. */
-
-				/* Calculate the intersection of the shaft
+                    /* Calculate the intersection of the shaft
 				 * axis with the assigned flight level. */
-				var aboveShaft = CalcShaftAbovePoint();
-				c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" 
-				    + VectorOpsHelper.V3DtoBroadcastString( c.GetMiningPlaneNormal() ).Replace(':',';')
-				    + ":" + VectorOpsHelper.V3DtoBroadcastString(aboveShaft));
-				c.pState.currentWp = aboveShaft;
-				c.SetState(MinerState.ReturningToShaft);
-				return;
+                    var aboveShaft = CalcShaftAbovePoint();
+                    c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" 
+                                         + VectorOpsHelper.V3DtoBroadcastString( c.GetMiningPlaneNormal() ).Replace(':',';')
+                                         + ":" + VectorOpsHelper.V3DtoBroadcastString(aboveShaft));
+                    c.pState.currentWp = aboveShaft;
+                    c.SetState(MinerState.ReturningToShaft);
+                    return;
+                }
+                case MinerState.ReturningToShaft:
+                {
+                    /* Have we been ordered back to base? */
+                    if (c.pState.bRecalled) {
 
-			} else if (state == MinerState.ReturningToShaft) {
+                        /* Have we already asked for a lock "mining-site"? If yes, cancel the request. */
+                        if (c.WaitingForLock) {
+                            c.BroadcastToChannel("miners", "common-airspace-ask-for-lock:");
+                            c.WaitingForLock = false;
+                            c.waitedActions.Clear();
+                        }
 
-				/* Have we been ordered back to base? */
-				if (c.pState.bRecalled) {
+                        /* Ask ATC for a free dockingport. */
+                        c.ArrangeDocking();
 
-					/* Have we already asked for a lock "mining-site"? If yes, cancel the request. */
-					if (c.WaitingForLock) {
-						c.BroadcastToChannel("miners", "common-airspace-ask-for-lock:");
-						c.WaitingForLock = false;
-						c.waitedActions.Clear();
-					}
+                        /* Stop movement, don't keep flying to the mining site. */
+                        //TODO: In the meantime, APck keeps flying us towards the mining site. 
+                        //      Instead, we should bring the drone to a halt immediately.
+                        return;
+                    }
 
-					/* Ask ATC for a free dockingport. */
-					c.ArrangeDocking();
+                    if (!CurrentWpReached(1.0f))
+                        return; // Not reached the point above the shaft yet. Keep flying.
 
-					/* Stop movement, don't keep flying to the mining site. */
-					//TODO: In the meantime, APck keeps flying us towards the mining site. 
-					//      Instead, we should bring the drone to a halt immediately.
-					return;
-				}
+                    /* Acquire "mining-site" airspace lock before descending into the shaft. */
+                    c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
+                    {
+                        mc.SetState(MinerState.GoingToEntry);
 
-				if (!CurrentWpReached(1.0f))
-					return; // Not reached the point above the shaft yet. Keep flying.
+                        /* Start the drills. */
+                        c.drills.ForEach(d => d.Enabled = true);
 
-				/* Acquire "mining-site" airspace lock before descending into the shaft. */
-				c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
-				{
-					mc.SetState(MinerState.GoingToEntry);
+                        /* Command the auto pilot to descend to the shaft. */
+                        var entry = $"command:create-wp:Name=drill entry,Ng=Forward,UpNormal=1;0;0,AimNormal=" +
+                                    $"{VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')}:";
 
-					/* Start the drills. */
-					c.drills.ForEach(d => d.Enabled = true);
+                        double elevation;
+                        if (Toggle.C.Check("adjust-entry-by-elevation") && c.remCon.TryGetPlanetElevation(MyPlanetElevation.Surface, out elevation))
+                        {
+                            Vector3D plCenter;
+                            c.remCon.TryGetPlanetPosition(out plCenter);
+                            var plNorm = Vector3D.Normalize(c.pState.miningEntryPoint.Value - plCenter);
+                            var h = (c.fwReferenceBlock.WorldMatrix.Translation - plCenter).Length() - elevation + 5f;
 
-					/* Command the auto pilot to descend to the shaft. */
-					var entry = $"command:create-wp:Name=drill entry,Ng=Forward,UpNormal=1;0;0,AimNormal=" +
-							$"{VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')}:";
+                            var elevationAdjustedEntryPoint = plCenter + plNorm * h;
+                            mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(elevationAdjustedEntryPoint));
+                            c.pState.currentWp = elevationAdjustedEntryPoint;
+                        }
+                        else
+                        {
+                            mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(c.pState.miningEntryPoint.Value));
+                            c.pState.currentWp = c.pState.miningEntryPoint;
+                        }
+                    });
+                    break;
+                }
+                case MinerState.GoingToUnload:
+                {
+                    if (CurrentWpReached(0.5f))
+                    {
+                        c.ArrangeDocking();
+                    }
 
-					double elevation;
-					if (Toggle.C.Check("adjust-entry-by-elevation") && c.remCon.TryGetPlanetElevation(MyPlanetElevation.Surface, out elevation))
-					{
-						Vector3D plCenter;
-						c.remCon.TryGetPlanetPosition(out plCenter);
-						var plNorm = Vector3D.Normalize(c.pState.miningEntryPoint.Value - plCenter);
-						var h = (c.fwReferenceBlock.WorldMatrix.Translation - plCenter).Length() - elevation + 5f;
+                    break;
+                }
+                case MinerState.ReturningHome:
+                {
+                    //TODO: Perform midcourse corrections (MCC) if docking port has moved by more than 1m.
+                    //      (e.g. issue a new APck command)
 
-						var elevationAdjustedEntryPoint = plCenter + plNorm * h;
-						mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(elevationAdjustedEntryPoint));
-						c.pState.currentWp = elevationAdjustedEntryPoint;
-					}
-					else
-					{
-						mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(c.pState.miningEntryPoint.Value));
-						c.pState.currentWp = c.pState.miningEntryPoint;
-					}
-				});
-			}
+                    if (!CurrentWpReached(1.0f))
+                        return; // Not reached the point above the docking port yet. Keep flying.
 
-			if (state == MinerState.GoingToUnload)
-			{
-				if (CurrentWpReached(0.5f))
-				{
-					c.ArrangeDocking();
-				}
+                    c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
+                    {
+                        var dv = c.ntv("docking");
 
-			} else if (state == MinerState.ReturningHome) {
-						
-				//TODO: Perform midcourse corrections (MCC) if docking port has moved by more than 1m.
-				//      (e.g. issue a new APck command)
-
-				if (!CurrentWpReached(1.0f))
-					return; // Not reached the point above the docking port yet. Keep flying.
-
-				c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
-				{
-					var dv = c.ntv("docking");
-
-					/* Calculate the intersection of the docking port
+                        /* Calculate the intersection of the docking port
 					 * axis with the assigned flight level.           */
-					var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
+                        var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
 
-					/* Command the final approach to the AP. */
-					c.CommandAutoPillock("command:create-wp:Name=DynamicDock.echelon,Ng=Forward,AimNormal="
-					+ VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')
-					+ ",TransformChannel=docking:"
-					+ VectorOpsHelper.V3DtoBroadcastString(Vector3D.Transform(r_aboveDock, MatrixD.Invert(dv.OrientationUnit.Value)))
-					+ ":command:pillock-mode:DockingFinal");
-					c.SetState(MinerState.Docking);
-				});
-
-			} else if (state == MinerState.WaitingForDocking) {
-
-				/* Get position (and other data) of the assigned docking port.
+                        /* Command the final approach to the AP. */
+                        c.CommandAutoPillock("command:create-wp:Name=DynamicDock.echelon,Ng=Forward,AimNormal="
+                                             + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')
+                                             + ",TransformChannel=docking:"
+                                             + VectorOpsHelper.V3DtoBroadcastString(Vector3D.Transform(r_aboveDock, MatrixD.Invert(dv.OrientationUnit.Value)))
+                                             + ":command:pillock-mode:DockingFinal");
+                        c.SetState(MinerState.Docking);
+                    });
+                    break;
+                }
+                case MinerState.WaitingForDocking:
+                {
+                    /* Get position (and other data) of the assigned docking port.
 				 * (Updated live, because it could be moving.)               */
-				var dv = c.ntv("docking");
-				if (!dv.Position.HasValue)
-					return; // We have not yet received a position information for the docking port.
+                    var dv = c.ntv("docking");
+                    if (!dv.Position.HasValue)
+                        return; // We have not yet received a position information for the docking port.
 						
-				/* Lay in a course to above the docking port. */
-				var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
+                    /* Lay in a course to above the docking port. */
+                    var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
 							
-				//TODO: Set AimNormal to direction of docking port, not mining plane.
-				c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':',';')
-					                + ":" + VectorOpsHelper.V3DtoBroadcastString(r_aboveDock));
-				c.pState.currentWp = r_aboveDock;
-				c.SetState(MinerState.ReturningHome);
+                    //TODO: Set AimNormal to direction of docking port, not mining plane.
+                    c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':',';')
+                        + ":" + VectorOpsHelper.V3DtoBroadcastString(r_aboveDock));
+                    c.pState.currentWp = r_aboveDock;
+                    c.SetState(MinerState.ReturningHome);
+                    break;
+                }
+                case MinerState.Docking:
+                {
+                    /* Connect the connector, if not done already. */
+                    if (c.docker.Status != MyShipConnectorStatus.Connected)
+                        return;
 
-			}
-
-			if (state == MinerState.Docking) {
-				/* Connect the connector, if not done already. */
-				if (c.docker.Status != MyShipConnectorStatus.Connected)
-					return;
-
-				/* If just connected, disable autopilot and release airspace lock.
+                    /* If just connected, disable autopilot and release airspace lock.
 				 * Set fuel tanks to stockpile, and batteries to recharge.       */
-				c.CommandAutoPillock("command:pillock-mode:Disabled");
-				c.remCon.DampenersOverride = false;
-				c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Recharge);
-				c.docker.OtherConnector.CustomData = "";
-				c.InvalidateDockingDto?.Invoke();
-				c.tanks.ForEach(b => b.Stockpile = true);
+                    c.CommandAutoPillock("command:pillock-mode:Disabled");
+                    c.remCon.DampenersOverride = false;
+                    c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Recharge);
+                    c.docker.OtherConnector.CustomData = "";
+                    c.InvalidateDockingDto?.Invoke();
+                    c.tanks.ForEach(b => b.Stockpile = true);
 
-				/* We just left controlled airspace. Release the lock ("base"
+                    /* We just left controlled airspace. Release the lock ("base"
 				 * or "general", whatever we have been granted).              */
-				if (c.ObtainedLock != null)
-					c.ReleaseLock(c.ObtainedLock);
+                    if (c.ObtainedLock != null)
+                        c.ReleaseLock(c.ObtainedLock);
 
-				c.SetState(MinerState.Docked);
-			}
-
-			if (state == MinerState.Docked)
-			{
-				E.Echo("Docking: Connected");
-				if (c.bUnloading = !CargoFlush()) {
-					/* Still unloading, remain docked. */
-					E.Echo("Docking: still have items");
-					return;
-				}
+                    c.SetState(MinerState.Docked);
+                    break;
+                }
+                case MinerState.Docked:
+                {
+                    E.Echo("Docking: Connected");
+                    if (c.bUnloading = !CargoFlush()) {
+                        /* Still unloading, remain docked. */
+                        E.Echo("Docking: still have items");
+                        return;
+                    }
 						
-				/* Wait until repaired, recharged and refuled. */
-				if (!c.CheckBatteriesAndIntegrity(1f, 1f)) {
-					/* We need to remain docked for maintenance. */
-					c.SetState(MinerState.Maintenance);
-					c.pState.LifetimeWentToMaintenance++;
-					Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
-						if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
-						{
-							c.SetState(MinerState.Docked);
-						}
-					});
-					return;
-				}
+                    /* Wait until repaired, recharged and refuled. */
+                    if (!c.CheckBatteriesAndIntegrity(1f, 1f)) {
+                        /* We need to remain docked for maintenance. */
+                        c.SetState(MinerState.Maintenance);
+                        c.pState.LifetimeWentToMaintenance++;
+                        Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
+                            if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
+                            {
+                                c.SetState(MinerState.Docked);
+                            }
+                        });
+                        return;
+                    }
 
-				/* If recalled, go to "Disabled" mode. */
-				if (c.pState.bRecalled) {
-					c.SetState(MinerState.Disabled);
-					c.pState.bRecalled = false;
-					c.embeddedUnit?.UpdateHUD();
-					AccountUnload();
-					c.pState.LifetimeOperationTime += (int)(DateTime.Now - SessionStartedAt).TotalSeconds;
-					c.stateWrapper.Save();
-					c.CurrentJob = null; //TODO: Tell the dispatcher that the job will not be completed.
-					return;
-				}
+                    /* If recalled, go to "Disabled" mode. */
+                    if (c.pState.bRecalled) {
+                        c.SetState(MinerState.Disabled);
+                        c.pState.bRecalled = false;
+                        c.embeddedUnit?.UpdateHUD();
+                        AccountUnload();
+                        c.pState.LifetimeOperationTime += (int)(DateTime.Now - SessionStartedAt).TotalSeconds;
+                        c.stateWrapper.Save();
+                        c.CurrentJob = null; //TODO: Tell the dispatcher that the job will not be completed.
+                        return;
+                    }
 
-				/* Unload and return to work. */
-				c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
-				{
-					/* Switch to internal power and open fuel tanks. */
-					c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Auto);
-					c.tanks.ForEach(b => b.Stockpile = false);
+                    /* Unload and return to work. */
+                    c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
+                    {
+                        /* Switch to internal power and open fuel tanks. */
+                        c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Auto);
+                        c.tanks.ForEach(b => b.Stockpile = false);
 
-					//c.docker.OtherConnector.CustomData = "";
-					AccountUnload();
+                        //c.docker.OtherConnector.CustomData = "";
+                        AccountUnload();
 
-					/* Lay in a course to the point above
+                        /* Lay in a course to the point above
 					 * docking port and engage autopilot. */
-					HandleUnload(c.docker.OtherConnector);
+                        HandleUnload(c.docker.OtherConnector);
 
-					/* Disconnect and lift off. */
-					c.docker.Disconnect();
-					c.SetState(MinerState.Takeoff);
-				});
+                        /* Disconnect and lift off. */
+                        c.docker.Disconnect();
+                        c.SetState(MinerState.Takeoff);
+                    });
+                    break;
+                }
+                case MinerState.Maintenance:
+                {
+                    // for world reload
+                    if ((c.PrevState != MinerState.Docking) && (c.docker.Status == MyShipConnectorStatus.Connected))
+                    {
+                        c.CommandAutoPillock("command:pillock-mode:Disabled");
+                        Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
+                            if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
+                            {
+                                c.SetState(MinerState.Docked);
+                            }
+                        });
+                    }
 
-			} else if (state == MinerState.Maintenance) {
-
-				// for world reload
-				if ((c.PrevState != MinerState.Docking) && (c.docker.Status == MyShipConnectorStatus.Connected))
-				{
-					c.CommandAutoPillock("command:pillock-mode:Disabled");
-					Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
-						if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
-						{
-							c.SetState(MinerState.Docked);
-						}
-					});
-				}
-			}
-
-		}
+                    break;
+                }
+            }
+        }
 
 		/** \brief Unloads all cargo, returns true on success. */
 		bool CargoFlush()
