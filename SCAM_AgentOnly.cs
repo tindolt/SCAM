@@ -1141,12 +1141,17 @@ public class MinerController
 			}
 
 			if (msg.Tag == "command")
-			{
-				if (msg.Data.ToString() == "force-finish")
-					FinishAndDockHandler();
-				if (msg.Data.ToString() == "mine")
-					MineCommandHandler();
-			}
+            {
+                switch (msg.Data.ToString())
+                {
+                    case "force-finish":
+                        FinishAndDockHandler();
+                        break;
+                    case "mine":
+                        MineCommandHandler();
+                        break;
+                }
+            }
 
 			if (msg.Tag == "set-value")
 			{
