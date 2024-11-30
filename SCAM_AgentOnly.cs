@@ -3489,7 +3489,7 @@ public class PillockController
 			var accelerate = true;
 
 			var stoppingPathAtCurrentSpeed = Math.Pow(Math.Max(0, relativeSpeed), 2) / (2 * toOppositeTargetCapacity * StoppingPowerQuotient);
-			var padding = toTarget.Length() - stoppingPathAtCurrentSpeed;
+			var padding = toTarget.Length() - stoppingPathAtCurrentSpeed; // TODO: unused
 
 			if (DbgIgc != 0)
 			{
@@ -3627,6 +3627,7 @@ void CheckExpireNTV()
 
 Dictionary<string, TargetTelemetry> NamedTeleData = new Dictionary<string, TargetTelemetry>(); ///< Live telemetry about the (potentially moving) docking port at the base.
 
+// TODO: this is never used. Future feature?
 public struct TeleDto
 {
 	public Vector3D? pos;
@@ -3980,7 +3981,7 @@ static class UserCtrlTest
 		var res = new Vector3();
 		if (Toggle.C.Check("ignore-user-thruster"))
 			return res;
-		var c = ctrls.Where(x => x.IsUnderControl).FirstOrDefault();
+		var c = ctrls.FirstOrDefault(x => x.IsUnderControl);
 		if (c != null && (c.MoveIndicator != Vector3.Zero))
 			return Vector3D.TransformNormal(c.MoveIndicator, fwRef * MatrixD.Transpose(c.WorldMatrix));
 		return res;
