@@ -2486,10 +2486,6 @@ static class VectorOpsHelper
 
 		return assumedPosition;
 	}
-	public static string GetGPSString(string name, Vector3D p, Color c)
-	{
-		return $"GPS:{name}:{p.X}:{p.Y}:{p.Z}:#{c.R:X02}{c.G:X02}{c.B:X02}:";
-	}
 
 }
 
