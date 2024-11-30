@@ -2325,7 +2325,7 @@ static class VectorOpsHelper
 {
 	public static string V3DtoBroadcastString(params Vector3D[] vectors)
 	{
-		return string.Join(":", vectors.Select(v => string.Format("{0}:{1}:{2}", v.X, v.Y, v.Z)));
+		return string.Join(":", vectors.Select(v => $"{v.X}:{v.Y}:{v.Z}"));
 	}
 
 	public static string MtrDtoBroadcastString(MatrixD mat)
