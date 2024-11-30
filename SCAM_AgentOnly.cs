@@ -1339,12 +1339,9 @@ public class MinerController
 	}
 
 	public void SkipCommandHandler()
-	{
-		if (CurrentJob != null)
-		{
-			CurrentJob.SkipShaft();
-		}
-	}
+    {
+        CurrentJob?.SkipShaft();
+    }
 
 	/**
 	 * \brief Plan the agent's way home.
