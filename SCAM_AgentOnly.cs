@@ -913,15 +913,9 @@ public class MinerController
 		return pState.MinerState;
 	}
 
-	public PersistentState pState
-	{
-		get
-		{
-			return stateWrapper.PState;
-		}
-	}
+	public PersistentState pState => stateWrapper.PState;
 
-	Func<string, TargetTelemetry> ntv;
+    Func<string, TargetTelemetry> ntv;
 	StateWrapper stateWrapper;
 	public MinerController(IMyGridTerminalSystem gts, IMyIntergridCommunicationSystem igc, StateWrapper stateWrapper,
 			Func<string, TargetTelemetry> GetNTV)
