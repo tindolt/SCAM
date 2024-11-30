@@ -2763,7 +2763,7 @@ public class APckUnit
 		UserCtrlTest.Init(ctrls);
 
 		antenna = GetCoreC<IMyRadioAntenna>(f).FirstOrDefault();
-		docker = GetCoreC<IMyShipConnector>(f).First();
+		docker = GetCoreC<IMyShipConnector>(f).FirstOrDefault(b => b.CustomName.Contains(DockHostTag)) ?? GetCoreC<IMyShipConnector>(f).First();
 
 		wh = GetCoreC<IMyWarhead>(f);
 
