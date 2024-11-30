@@ -957,9 +957,9 @@ public class MinerController
 
 		gts.GetBlocksOfType(allFunctionalBlocks, b => b.IsSameConstructAs(me));
 	}
-	public void SetControlledUnit(IMyProgrammableBlock pCore)
+	public void SetControlledUnit(IMyProgrammableBlock target)
 	{
-		this.pCore = pCore;
+		this.pCore = target;
 	}
 	public void SetControlledUnit(APckUnit unit)
 	{
