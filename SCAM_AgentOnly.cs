@@ -527,43 +527,43 @@ public class PersistentState
 	T ParseValue<T>(Dictionary<string, string> values, string key)
 	{
 		string res;
-		if (values.TryGetValue(key, out res) && !string.IsNullOrEmpty(res))
-		{
-			if (typeof(T) == typeof(String))
-				return (T)(object)res;
-			else if (typeof(T) == typeof(bool))
-				return (T)(object)bool.Parse(res);
-			else if (typeof(T) == typeof(int))
-				return (T)(object)int.Parse(res);
-			else if (typeof(T) == typeof(int?))
-				return (T)(object)int.Parse(res);
-			else if (typeof(T) == typeof(float))
-				return (T)(object)float.Parse(res);
-			else if (typeof(T) == typeof(float?))
-				return (T)(object)float.Parse(res);
-			else if (typeof(T) == typeof(long?))
-				return (T)(object)long.Parse(res);
-			else if (typeof(T) == typeof(Vector3D))
-			{
-				var d = res.Split(':');
-				return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
-			}
-			else if (typeof(T) == typeof(Vector3D?))
-			{
-				var d = res.Split(':');
-				return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
-			}
-			else if (typeof(T) == typeof(List<byte>))
-			{
-				var d = res.Split(':');
-				return (T)(object)d.Select(x => byte.Parse(x)).ToList();
-			}
-			else if (typeof(T) == typeof(MinerState))
-			{
-				return (T)Enum.Parse(typeof(MinerState), res);
-			}
-		}
-		return default(T);
+        if (!values.TryGetValue(key, out res) || string.IsNullOrEmpty(res)) return default(T);
+
+        if (typeof(T) == typeof(string))
+            return (T)(object)res;
+        if (typeof(T) == typeof(bool))
+            return (T)(object)bool.Parse(res);
+        if (typeof(T) == typeof(int))
+            return (T)(object)int.Parse(res);
+        if (typeof(T) == typeof(int?))
+            return (T)(object)int.Parse(res);
+        if (typeof(T) == typeof(float))
+            return (T)(object)float.Parse(res);
+        if (typeof(T) == typeof(float?))
+            return (T)(object)float.Parse(res);
+        if (typeof(T) == typeof(long?))
+            return (T)(object)long.Parse(res);
+        if (typeof(T) == typeof(Vector3D))
+        {
+            var d = res.Split(':');
+            return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
+        }
+        if (typeof(T) == typeof(Vector3D?))
+        {
+            var d = res.Split(':');
+            return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
+        }
+        if (typeof(T) == typeof(List<byte>))
+        {
+            var d = res.Split(':');
+            return (T)(object)d.Select(x => byte.Parse(x)).ToList();
+        }
+        if (typeof(T) == typeof(MinerState))
+        {
+            return (T)Enum.Parse(typeof(MinerState), res);
+        }
+
+        return default(T);
 	}
 
 	public PersistentState Load(string storage)
