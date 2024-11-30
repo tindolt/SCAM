@@ -1601,14 +1601,15 @@ public class MinerController
 		float spaceNominal = 0;
 		float spaceOccupied = 0;
 		cargoMass_cached = 0;
-		for (var i = 0; i < allContainers.Count; i++) {
-			var inv = allContainers[i].GetInventory(0);
-			if (inv == null)
-				continue;
-			spaceNominal += (float)inv.MaxVolume;
-			spaceOccupied += (float)inv.CurrentVolume;
-			cargoMass_cached += (float)inv.CurrentMass;
-		}
+		foreach (var t in allContainers)
+        {
+            var inv = t.GetInventory(0);
+            if (inv == null)
+                continue;
+            spaceNominal += (float)inv.MaxVolume;
+            spaceOccupied += (float)inv.CurrentVolume;
+            cargoMass_cached += (float)inv.CurrentMass;
+        }
 		cargoFullness_cached = (spaceNominal > 0 ? spaceOccupied / spaceNominal : 1f);
 	}
 
