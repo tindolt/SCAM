@@ -1187,24 +1187,26 @@ public class MinerController
                 {
                     /* Progress report requested, compile and send the report. */
                     var damBlck = allFunctionalBlocks.FirstOrDefault(b => !b.IsFunctional); // Damaged block, if exists.
-                    var report = new TransponderMsg();
-                    report.Id          = IGC.Me;
-                    report.WM          = fwReferenceBlock.WorldMatrix;
-                    report.v           = remCon.GetShipVelocities().LinearVelocity;
-                    report.f_bat       = batteryCharge_cached;
-                    report.f_bat_min   = Variables.Get<float>("battery-low-factor");
-                    report.f_fuel      = fuelLevel_cached;
-                    report.f_fuel_min  = Variables.Get<float>("gas-low-factor");
-                    report.damage      = (damBlck != null ? damBlck.CustomName : "");
-                    report.state       = pState.MinerState;
-                    report.f_cargo     = cargoFullness_cached;
-                    report.f_cargo_max = Variables.Get<float>("cargo-full-factor");
-                    report.bAdaptive   = Toggle.C.Check("adaptive-mining");
-                    report.bRecalled   = pState.bRecalled;
-                    report.t_shaft     = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f;
-                    report.t_ore       = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f;
-                    report.bUnload     = bUnloading;
-                    report.name        = me.CubeGrid.CustomName;
+                    var report = new TransponderMsg
+                    {
+                        Id = IGC.Me,
+                        WM = fwReferenceBlock.WorldMatrix,
+                        v = remCon.GetShipVelocities().LinearVelocity,
+                        f_bat = batteryCharge_cached,
+                        f_bat_min = Variables.Get<float>("battery-low-factor"),
+                        f_fuel = fuelLevel_cached,
+                        f_fuel_min = Variables.Get<float>("gas-low-factor"),
+                        damage = (damBlck != null ? damBlck.CustomName : ""),
+                        state = pState.MinerState,
+                        f_cargo = cargoFullness_cached,
+                        f_cargo_max = Variables.Get<float>("cargo-full-factor"),
+                        bAdaptive = Toggle.C.Check("adaptive-mining"),
+                        bRecalled = pState.bRecalled,
+                        t_shaft = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f,
+                        t_ore = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f,
+                        bUnload = bUnloading,
+                        name = me.CubeGrid.CustomName
+                    };
                     CurrentJob?.UpdateReport(report, pState.MinerState);
                     IGC.SendBroadcastMessage("miners.report", report.ToIgc());
                     break;
