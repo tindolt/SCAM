@@ -3,3 +3,9 @@ MDK
 obj
 
 *.sw?
+*.csproj
+*.readme
+*.ini
+*.sln
+thumb.png
+/bin
