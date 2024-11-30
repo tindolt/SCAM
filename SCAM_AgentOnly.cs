@@ -363,7 +363,7 @@ void CreateRole()
 			new Dictionary<string, Action<string[]>>
 				{
 					{
-						"create-wp", (parts) => CreateWP(parts)
+						"create-wp", CreateWP
 					},
 					{
 						"pillock-mode", (parts) => coreUnit?.TrySetState(parts[2])
