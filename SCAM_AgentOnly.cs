@@ -175,7 +175,7 @@ void StartOfTick(string arg)
 		var commands = arg.Split(new[] { "],[" }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim('[', ']')).ToList();
 		foreach (var c in commands)
 		{
-			string[] cmdParts = c.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+			var cmdParts = c.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
 			if (cmdParts[0] == "command")
 			{
 				try
@@ -259,7 +259,7 @@ void Ctor()
 				},
 				{
 					"add-panel", (parts) => {
-						List<IMyTextPanel> b = new List<IMyTextPanel>();
+						var b = new List<IMyTextPanel>();
 						GridTerminalSystem.GetBlocksOfType(b, x => x.IsSameConstructAs(Me) && x.CustomName.Contains(parts[2]));
 						var p = b.FirstOrDefault();
 						if (p != null)
@@ -272,7 +272,7 @@ void Ctor()
 				},
 				{
 					"add-logger", (parts) => {
-						List<IMyTextPanel> b = new List<IMyTextPanel>();
+						var b = new List<IMyTextPanel>();
 						GridTerminalSystem.GetBlocksOfType(b, x => x.IsSameConstructAs(Me) && x.CustomName.Contains(parts[2]));
 						var p = b.FirstOrDefault();
 						if (p != null)
@@ -632,7 +632,7 @@ public class PersistentState
 
 	string Serialize()
 	{
-		string[] pairs = new string[]
+		var pairs = new string[]
 		{
 			"LifetimeAcceptedTasks=" + LifetimeAcceptedTasks,
 			"LifetimeOperationTime=" + LifetimeOperationTime,
@@ -951,12 +951,12 @@ public class MinerController
 		gts.GetBlocksOfType(batteries, b => b.IsSameConstructAs(me));
 		gts.GetBlocksOfType(tanks, b => b.IsSameConstructAs(me));
 
-		List<IMyTimerBlock> triggers = new List<IMyTimerBlock>();
+		var triggers = new List<IMyTimerBlock>();
 		gts.GetBlocksOfType(triggers, b => b.IsSameConstructAs(me));
 		tts = new TimerTriggerService(triggers);
 
 		float maxR = 0;
-		float padding = me.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 2f : 1.5f;
+		var padding = me.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 2f : 1.5f;
 		foreach (var d in drills)
 		{
 			var r = Vector3D.Reject(d.GetPosition() - fwReferenceBlock.GetPosition(), fwReferenceBlock.WorldMatrix.Forward).Length();
@@ -1290,7 +1290,7 @@ public class MinerController
 
 	public void LogMsg(object msg, bool outgoing)
 	{
-		string data = msg.GetType().Name;
+		var data = msg.GetType().Name;
 		if (msg is string)
 			data = (string)msg;
 		else if ((msg is ImmutableArray<Vector3D>) || (msg is Vector3D))
@@ -1451,7 +1451,7 @@ public class MinerController
 				var cmds = cmd.Split(new[] { "],[" }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim('[', ']')).ToList();
 				foreach (var i in cmds)
 				{
-					string[] cmdParts = i.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+					var cmdParts = i.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
 					if (cmdParts[0] == "command")
 					{
 						ApckRegistry.RunCommand(cmdParts[1], cmdParts);
@@ -1517,7 +1517,7 @@ public class MinerController
 
 	float GetMyTerminalBlockHealth(IMyTerminalBlock block)
 	{
-		IMySlimBlock slimblock = block.CubeGrid.GetCubeBlock(block.Position);
+		var slimblock = block.CubeGrid.GetCubeBlock(block.Position);
 		if (slimblock != null)
 			return (slimblock.BuildIntegrity - slimblock.CurrentDamage) / slimblock.MaxIntegrity;
 		else
@@ -1526,7 +1526,7 @@ public class MinerController
 
 	void TagDamagedTerminalBlocks(IMyTerminalBlock myTerminalBlock, float health, bool onlyNonFunctional)
 	{
-		string name = myTerminalBlock.CustomName;
+		var name = myTerminalBlock.CustomName;
 		if ((health < 1f) && (!onlyNonFunctional || !myTerminalBlock.IsFunctional))
 		{
 			if (!(myTerminalBlock is IMyRadioAntenna) && !(myTerminalBlock is IMyBeacon))
@@ -1536,8 +1536,8 @@ public class MinerController
 			string taggedName;
 			if (name.Contains("||"))
 			{
-				string pattern = @"(?<=DAMAGED: )(?<label>\d+)(?=%)";
-				System.Text.RegularExpressions.Regex r = new System.Text.RegularExpressions.Regex(pattern);
+				var pattern = @"(?<=DAMAGED: )(?<label>\d+)(?=%)";
+				var r = new System.Text.RegularExpressions.Regex(pattern);
 				taggedName = r.Replace(
 					name,
 					delegate (System.Text.RegularExpressions.Match m)
@@ -1562,7 +1562,7 @@ public class MinerController
 	{
 		if (myTerminalBlock.CustomName.Contains("||"))
 		{
-			string name = myTerminalBlock.CustomName;
+			var name = myTerminalBlock.CustomName;
 			myTerminalBlock.CustomName = name.Split('|')[0].Trim();
 			if (!(myTerminalBlock is IMyRadioAntenna) && !(myTerminalBlock is IMyBeacon))
 			{
@@ -1608,7 +1608,7 @@ public class MinerController
 		float spaceNominal = 0;
 		float spaceOccupied = 0;
 		cargoMass_cached = 0;
-		for (int i = 0; i < allContainers.Count; i++) {
+		for (var i = 0; i < allContainers.Count; i++) {
 			var inv = allContainers[i].GetInventory(0);
 			if (inv == null)
 				continue;
@@ -1638,7 +1638,7 @@ public class MinerController
 		bool CurrentWpReached(double tolerance)
 		{
 			if (c.pState.currentWp.HasValue) {
-				double dist = (c.pState.currentWp.Value - c.fwReferenceBlock.WorldMatrix.Translation).Length();
+				var dist = (c.pState.currentWp.Value - c.fwReferenceBlock.WorldMatrix.Translation).Length();
 				E.Echo($"ds_WP: {dist:f2}");
 			}
 			return (!c.pState.currentWp.HasValue || (c.pState.currentWp.Value - c.fwReferenceBlock.WorldMatrix.Translation).Length() <= tolerance);
@@ -1729,10 +1729,10 @@ public class MinerController
 		 */
 		public Vector3D CalcShaftAbovePoint()
 		{
-			double e = Vector3D.Dot(c.GetMiningPlaneNormal(), c.pState.n_FL);
+			var e = Vector3D.Dot(c.GetMiningPlaneNormal(), c.pState.n_FL);
 			//TODO: Can the mining plane be orthogonal to the flight levels?
 			//      Then is e == 0.
-			double d = Vector3D.Dot(c.pState.p_FL - c.pState.miningEntryPoint.Value, c.pState.n_FL) / e;
+			var d = Vector3D.Dot(c.pState.p_FL - c.pState.miningEntryPoint.Value, c.pState.n_FL) / e;
 			return c.pState.miningEntryPoint.Value + c.GetMiningPlaneNormal() * d;
 		}
 
@@ -1745,12 +1745,12 @@ public class MinerController
 		 */
 		public Vector3D CalcDockAbovePoint(Vector3D r_D, Vector3D n_D)
 		{
-			double e = Vector3D.Dot(n_D, c.pState.n_FL);
+			var e = Vector3D.Dot(n_D, c.pState.n_FL);
 			if (Math.Abs(e) < 1e-5) {
 				//TODO: Docking axis and flight level are parallel! What to do?
 				E.Echo("Error: Docking axis and flight level are parallel. Cannot compute flight plan.");
 			}
-			double d = Vector3D.Dot(c.pState.p_FL - r_D, c.pState.n_FL) / e; 
+			var d = Vector3D.Dot(c.pState.p_FL - r_D, c.pState.n_FL) / e; 
 			return r_D + n_D * d;
 		}
 
@@ -1791,7 +1791,7 @@ public class MinerController
 			} else if (state == MinerState.Drilling) {
 
 				/* Update some reporting stuff. */
-				float currentDepth = GetCurrentDepth();
+				var currentDepth = GetCurrentDepth();
 				E.Echo($"Depth: current: {currentDepth:f1} skip: {c.pState.skipDepth:f1}");
 				E.Echo($"Depth: least: {c.pState.leastDepth:f1} max: {c.pState.maxDepth:f1}");
 				E.Echo($"Cargo: {c.cargoFullness_cached:f2} / " + Variables.Get<float>("cargo-full-factor").ToString("f2"));
@@ -1824,7 +1824,7 @@ public class MinerController
 				// skipped surface layer, checking for ore and caring about cargo level
 				c.drills.ForEach(d => d.UseConveyorSystem = true);
 
-				bool bValOre = CargoIsGettingValuableOre();
+				var bValOre = CargoIsGettingValuableOre();
 				if (bValOre)
 					lastFoundOreDepth = Math.Max(currentDepth, lastFoundOreDepth ?? 0);
 
@@ -1993,7 +1993,7 @@ public class MinerController
 
 				c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
 				{
-					TargetTelemetry dv = c.ntv("docking");
+					var dv = c.ntv("docking");
 
 					/* Calculate the intersection of the docking port
 					 * axis with the assigned flight level.           */
@@ -2012,7 +2012,7 @@ public class MinerController
 
 				/* Get position (and other data) of the assigned docking port.
 				 * (Updated live, because it could be moving.)               */
-				TargetTelemetry dv = c.ntv("docking");
+				var dv = c.ntv("docking");
 				if (!dv.Position.HasValue)
 					return; // We have not yet received a position information for the docking port.
 						
@@ -2136,7 +2136,7 @@ public class MinerController
 			{
 				var items = new List<MyInventoryItem>();
 				localInv.GetItems(items);
-				for (int n = 0; n < items.Count; n++)
+				for (var n = 0; n < items.Count; n++)
 				{
 					var itemToPush = items[n];
 					IMyInventory destinationInv;
@@ -2281,16 +2281,16 @@ public class MinerController
 		{
 			/* Count all ore on board. */
 			float totalAmount = 0;
-			for (int i = 0; i < c.allContainers.Count; ++i) {
+			for (var i = 0; i < c.allContainers.Count; ++i) {
 				var inv = c.allContainers[i].GetInventory(0);
 				if (inv == null)
 					continue;
-				List<MyInventoryItem> items = new List<MyInventoryItem>();
+				var items = new List<MyInventoryItem>();
 				inv.GetItems(items);
 				items.Where(ix => ix.Type.ToString().Contains("Ore") && !ix.Type.ToString().Contains("Stone")).ToList().ForEach(x => totalAmount += (float)x.Amount);
 			}
 
-			bool gain = ((prevTickValCount > 0) && (totalAmount > prevTickValCount));
+			var gain = ((prevTickValCount > 0) && (totalAmount > prevTickValCount));
 
 			prevTickValCount = totalAmount;
 
@@ -2323,10 +2323,10 @@ static class VectorOpsHelper
 
 	public static string MtrDtoBroadcastString(MatrixD mat)
 	{
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < 4; i++)
+		var sb = new StringBuilder();
+		for (var i = 0; i < 4; i++)
 		{
-			for (int j = 0; j < 4; j++)
+			for (var j = 0; j < 4; j++)
 			{
 				sb.Append(mat[i, j] + ":");
 			}
@@ -2336,8 +2336,8 @@ static class VectorOpsHelper
 
 	public static Vector3D GetTangFreeDestinantion(MatrixD myMatrix, Vector3D pointTomove, BoundingSphereD dangerZone)
 	{
-		RayD r = new RayD(myMatrix.Translation, Vector3D.Normalize(pointTomove - myMatrix.Translation));
-		double? collideDist = r.Intersects(dangerZone);
+		var r = new RayD(myMatrix.Translation, Vector3D.Normalize(pointTomove - myMatrix.Translation));
+		var collideDist = r.Intersects(dangerZone);
 
 		if (collideDist.HasValue)
 		{
@@ -2391,9 +2391,9 @@ static class VectorOpsHelper
 	// TODO: this is some BS control code, merge new from APck
 	public static void SetOverrideX(IMyGyro gyro, Vector3 settings, Vector3D angV)
 	{
-		float yaw = settings.Y;
-		float pitch = settings.X;
-		float roll = settings.Z;
+		var yaw = settings.Y;
+		var pitch = settings.X;
+		var roll = settings.Z;
 
 		var rm = IsLargeGrid ? 30 : 60;
 		var acc = new Vector3D(1.92f, 1.92f, 1.92f);
@@ -2442,7 +2442,7 @@ static class VectorOpsHelper
 	public static Vector3D GetPredictedImpactPoint(Vector3D meTranslation, Vector3D meVel, Vector3D targetCenter, Vector3D targetVelocity,
 			Vector3D munitionVel, bool compensateOwnVel)
 	{
-		double munitionSpeed = Vector3D.Dot(Vector3D.Normalize(targetCenter - meTranslation), munitionVel);
+		var munitionSpeed = Vector3D.Dot(Vector3D.Normalize(targetCenter - meTranslation), munitionVel);
 		if (munitionSpeed < 30)
 			munitionSpeed = 30;
 		return GetPredictedImpactPoint(meTranslation, meVel, targetCenter, targetVelocity, munitionSpeed, compensateOwnVel);
@@ -2451,10 +2451,10 @@ static class VectorOpsHelper
 	public static Vector3D GetPredictedImpactPoint(Vector3D origin, Vector3D originVel, Vector3D targetCenter, Vector3D targetVelocity,
 			double munitionSpeed, bool compensateOwnVel)
 	{
-		double currentDistance = Vector3D.Distance(origin, targetCenter);
-		Vector3D target = targetCenter - origin;
-		Vector3D targetNorm = Vector3D.Normalize(target);
-		Vector3D assumedPosition = targetCenter;
+		var currentDistance = Vector3D.Distance(origin, targetCenter);
+		var target = targetCenter - origin;
+		var targetNorm = Vector3D.Normalize(target);
+		var assumedPosition = targetCenter;
 
 		Vector3D velNorm;
 
@@ -2777,7 +2777,7 @@ public class APckUnit
 		thrusters.AddRange(GetCoreC<IMyThrust>(f));
 		thrusters.AddRange(GetCoreC<IMyArtificialMassBlock>(f));
 
-		string tag = Variables.Get<string>("ggen-tag");
+		var tag = Variables.Get<string>("ggen-tag");
 		if (!string.IsNullOrEmpty(tag))
 		{
 			var g = new List<IMyGravityGenerator>();
@@ -3258,14 +3258,14 @@ public class PillockController
 
 		BH = bh;
 
-		MyPlanetElevation dElevation = new MyPlanetElevation();
+		var dElevation = new MyPlanetElevation();
 		double elevation;
 		RemCon.TryGetPlanetElevation(dElevation, out elevation);
 		Vector3D planetPos;
 		RemCon.TryGetPlanetPosition(out planetPos);
 
 		Func<Vector3D> approachVelocity = null; // for PIP
-		bool fRoll = false;
+		var fRoll = false;
 		float? speedLimit = null;
 		TargetTelemetry currentTargetVectors = null;
 
@@ -3319,8 +3319,8 @@ public class PillockController
 						var mePos = (wp.TranslationOverride != null) ? wp.TranslationOverride() : Fw.GetPosition();
 						if ((approachVelocity != null) && (targetVelocity.HasValue) && (targetVelocity.Value.Length() > 0))
 						{
-							Vector3D targetCenter = point;
-							Vector3D pp = VectorOpsHelper.GetPredictedImpactPoint(
+							var targetCenter = point;
+							var pp = VectorOpsHelper.GetPredictedImpactPoint(
 								mePos,
 								Velocity,
 								targetCenter,
@@ -3340,8 +3340,8 @@ public class PillockController
 						else
 							PosShift = point;
 
-						double origD = (point - mePos).Length();
-						double shiftD = (PosShift - mePos).Length();
+						var origD = (point - mePos).Length();
+						var shiftD = (PosShift - mePos).Length();
 
 						if (DbgIgc != 0)
 							DBG = $"origD: {origD:f1}\nshiftD: {shiftD:f1}";
@@ -3367,13 +3367,13 @@ public class PillockController
 						if (!VolThrust && (ThrustDest != Fw.WorldMatrix.Translation))
 							AimPoint = ThrustDest;
 
-						Vector3D threeComponentCorrection = Vector3D.Zero;
+						var threeComponentCorrection = Vector3D.Zero;
 						var toTarget = AimPoint - Fw.WorldMatrix.Translation;
 						if (toTarget != Vector3D.Zero)
 						{
 							var ttN = Vector3D.Normalize(toTarget);
 							var desM = MatrixD.CreateFromDir(ttN);
-							Vector3D ctrlError = Vector3D.Zero;
+							var ctrlError = Vector3D.Zero;
 							var up = wp.SuggestedUpNorm?.Invoke() ?? Vector3D.Zero;
 							threeComponentCorrection = VectorOpsHelper.GetAnglesToPointMrot(ttN, gridFov, Fw.WorldMatrix, up, ref ctrlError);
 							ctrlError.Z = 0;
@@ -3438,28 +3438,28 @@ public class PillockController
 			return;
 		}
 
-		float mass = RemCon.CalculateShipMass().PhysicalMass;
-		BoundingBoxD accCap = _ts().GetCapacityBB(mass);
+		var mass = RemCon.CalculateShipMass().PhysicalMass;
+		var accCap = _ts().GetCapacityBB(mass);
 		if (accCap.Volume == 0)
 			return;
 
-		Vector3D localGVector = Vector3D.Zero;
+		var localGVector = Vector3D.Zero;
 		if (NG != null)
 		{
 			localGVector = Vector3D.TransformNormal(NG.Value, invMatrix);
 			accCap += -localGVector;
 		}
 
-		Vector3D dbgReject = Vector3D.Zero;
-		Vector3D dbgTVbase = Vector3D.Zero;
+		var dbgReject = Vector3D.Zero;
+		var dbgTVbase = Vector3D.Zero;
 
-		Vector3D overrideVector = new Vector3D();
+		var overrideVector = new Vector3D();
 		if (toTarget.Length() > double.Epsilon)
 		{
-			Vector3D zeroBasedTargetPoint = Vector3D.TransformNormal(toTarget, invMatrix);
+			var zeroBasedTargetPoint = Vector3D.TransformNormal(toTarget, invMatrix);
 
-			RayD rayToCenter = new RayD(-zeroBasedTargetPoint * (MaxAccelInProximity ? 1000 : 1), Vector3D.Normalize(zeroBasedTargetPoint));
-			RayD rayToCenterInv = new RayD(zeroBasedTargetPoint * (MaxBrakeInProximity ? 1000 : 1), Vector3D.Normalize(-zeroBasedTargetPoint));
+			var rayToCenter = new RayD(-zeroBasedTargetPoint * (MaxAccelInProximity ? 1000 : 1), Vector3D.Normalize(zeroBasedTargetPoint));
+			var rayToCenterInv = new RayD(zeroBasedTargetPoint * (MaxBrakeInProximity ? 1000 : 1), Vector3D.Normalize(-zeroBasedTargetPoint));
 
 			var j = rayToCenterInv.Intersects(accCap);
 			var i = rayToCenter.Intersects(accCap);
@@ -3472,7 +3472,7 @@ public class PillockController
 
 			var toOppositeTargetCapacity = reversePoint.Length();
 
-			Vector3D reject = Vector3D.Reject(localVel, Vector3D.Normalize(zeroBasedTargetPoint));
+			var reject = Vector3D.Reject(localVel, Vector3D.Normalize(zeroBasedTargetPoint));
 
 			if (targetVel.HasValue)
 			{
@@ -3487,8 +3487,8 @@ public class PillockController
 
 			var relativeSpeed = Vector3D.Dot(relativeVel, Vector3D.Normalize(zeroBasedTargetPoint));
 
-			bool closingDistance = relativeSpeed > 0;
-			bool accelerate = true;
+			var closingDistance = relativeSpeed > 0;
+			var accelerate = true;
 
 			var stoppingPathAtCurrentSpeed = Math.Pow(Math.Max(0, relativeSpeed), 2) / (2 * toOppositeTargetCapacity * StoppingPowerQuotient);
 			var padding = toTarget.Length() - stoppingPathAtCurrentSpeed;
@@ -3694,7 +3694,7 @@ public class TargetTelemetry
 		EntityId = meta.Item2;
 		//var tickStamp = meta.Item3;
 		Type = (MyDetectedEntityType)meta.Item4;
-		TeleMetaFlags tm = (TeleMetaFlags)meta.Item5;
+		var tm = (TeleMetaFlags)meta.Item5;
 		SetPosition(igcDto.Item2, localTick);
 		if (HasFlag(tm, TeleMetaFlags.HasVelocity))
 		{
@@ -3776,8 +3776,8 @@ public class ThrusterSelector
 	}
 	public BoundingBoxD GetCapacityBB(float mass)
 	{
-		Vector3D min = new Vector3D(-caps[5], -caps[3], -caps[1]) / mass;
-		Vector3D max = new Vector3D(caps[4], caps[2], caps[0]) / mass;
+		var min = new Vector3D(-caps[5], -caps[3], -caps[1]) / mass;
+		var max = new Vector3D(caps[4], caps[2], caps[0]) / mass;
 
 		return new BoundingBoxD(min, max);
 	}
@@ -3793,7 +3793,7 @@ public class ThrusterSelector
 	public ThrusterSelector(IMyTerminalBlock forwardFacingBlock, List<IMyTerminalBlock> hw)
 	{
 		//this.gts = gts;
-		MatrixD wm = forwardFacingBlock.WorldMatrix;
+		var wm = forwardFacingBlock.WorldMatrix;
 
 		Func<Vector3D, List<IAccelerator>> getT = fw =>
 		{
@@ -3979,7 +3979,7 @@ static class UserCtrlTest
 	}
 	public static Vector3 GetUserCtrlVector(MatrixD fwRef)
 	{
-		Vector3 res = new Vector3();
+		var res = new Vector3();
 		if (Toggle.C.Check("ignore-user-thruster"))
 			return res;
 		var c = ctrls.Where(x => x.IsUnderControl).FirstOrDefault();
