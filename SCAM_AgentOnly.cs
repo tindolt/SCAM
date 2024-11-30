@@ -1324,9 +1324,11 @@ public class MinerController
 
 	public void MineCommandHandler()
 	{
-		CurrentJob = new MiningJob(this);
-		CurrentJob.SessionStartedAt = DateTime.Now;
-		pState.LifetimeAcceptedTasks++;
+		CurrentJob = new MiningJob(this)
+        {
+            SessionStartedAt = DateTime.Now
+        };
+        pState.LifetimeAcceptedTasks++;
 		if (!TryResumeFromDock())
 		{
 			/* This is the agent that was used for task designation.
