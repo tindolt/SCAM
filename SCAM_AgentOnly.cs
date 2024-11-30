@@ -797,7 +797,7 @@ Vector3D? castedSurfacePoint;
 Vector3D? castedNormal;
 public void RaycastTaskHandler(string[] cmdString)
 {
-	var cam = cameras.Where(c => c.IsActive).FirstOrDefault();
+	var cam = cameras.FirstOrDefault(c => c.IsActive);
 	if (cam != null)
 	{
 		cam.CustomData = "";
