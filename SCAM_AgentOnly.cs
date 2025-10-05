@@ -175,7 +175,7 @@ void StartOfTick(string arg)
 		var commands = arg.Split(new[] { "],[" }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim('[', ']')).ToList();
 		foreach (var c in commands)
 		{
-			string[] cmdParts = c.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+			var cmdParts = c.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
 			if (cmdParts[0] == "command")
 			{
 				try
@@ -259,7 +259,7 @@ void Ctor()
 				},
 				{
 					"add-panel", (parts) => {
-						List<IMyTextPanel> b = new List<IMyTextPanel>();
+						var b = new List<IMyTextPanel>();
 						GridTerminalSystem.GetBlocksOfType(b, x => x.IsSameConstructAs(Me) && x.CustomName.Contains(parts[2]));
 						var p = b.FirstOrDefault();
 						if (p != null)
@@ -272,7 +272,7 @@ void Ctor()
 				},
 				{
 					"add-logger", (parts) => {
-						List<IMyTextPanel> b = new List<IMyTextPanel>();
+						var b = new List<IMyTextPanel>();
 						GridTerminalSystem.GetBlocksOfType(b, x => x.IsSameConstructAs(Me) && x.CustomName.Contains(parts[2]));
 						var p = b.FirstOrDefault();
 						if (p != null)
@@ -299,7 +299,7 @@ void Ctor()
 					"low-update-rate", (parts) => Runtime.UpdateFrequency = UpdateFrequency.Update10
 				},
 				{
-					"create-task-raycast", (parts) => RaycastTaskHandler(parts)
+					"create-task-raycast", RaycastTaskHandler
 				},
 				{
 					//TODO: Rename "recall".
@@ -363,7 +363,7 @@ void CreateRole()
 			new Dictionary<string, Action<string[]>>
 				{
 					{
-						"create-wp", (parts) => CreateWP(parts)
+						"create-wp", CreateWP
 					},
 					{
 						"pillock-mode", (parts) => coreUnit?.TrySetState(parts[2])
@@ -396,18 +396,6 @@ void CreateRole()
 	}
 }
 
-static void AddUniqueItem<T>(T item, IList<T> c) where T : class
-{
-	if ((item != null) && !c.Contains(item))
-		c.Add(item);
-}
-
-public void BroadcastToChannel<T>(string tag, T data)
-{
-	var channel = IGC.RegisterBroadcastListener(tag);
-	IGC.SendBroadcastMessage(channel.Tag, data, TransmissionDistance.TransmissionDistanceMax);
-}
-
 public void Log(string msg)
 {
 	E.DebugLog(msg);
@@ -436,6 +424,7 @@ public enum MinerState : byte
 	Docking              = 15  ///< Descending to the docking port through shared airspace. (docking final approach)
 }
 
+// TODO: Is this for a planned feature because it is unused.
 public enum ShaftState { Planned, InProgress, Complete, Cancelled }
 
 public enum ApckState
@@ -538,43 +527,43 @@ public class PersistentState
 	T ParseValue<T>(Dictionary<string, string> values, string key)
 	{
 		string res;
-		if (values.TryGetValue(key, out res) && !string.IsNullOrEmpty(res))
-		{
-			if (typeof(T) == typeof(String))
-				return (T)(object)res;
-			else if (typeof(T) == typeof(bool))
-				return (T)(object)bool.Parse(res);
-			else if (typeof(T) == typeof(int))
-				return (T)(object)int.Parse(res);
-			else if (typeof(T) == typeof(int?))
-				return (T)(object)int.Parse(res);
-			else if (typeof(T) == typeof(float))
-				return (T)(object)float.Parse(res);
-			else if (typeof(T) == typeof(float?))
-				return (T)(object)float.Parse(res);
-			else if (typeof(T) == typeof(long?))
-				return (T)(object)long.Parse(res);
-			else if (typeof(T) == typeof(Vector3D))
-			{
-				var d = res.Split(':');
-				return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
-			}
-			else if (typeof(T) == typeof(Vector3D?))
-			{
-				var d = res.Split(':');
-				return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
-			}
-			else if (typeof(T) == typeof(List<byte>))
-			{
-				var d = res.Split(':');
-				return (T)(object)d.Select(x => byte.Parse(x)).ToList();
-			}
-			else if (typeof(T) == typeof(MinerState))
-			{
-				return (T)Enum.Parse(typeof(MinerState), res);
-			}
-		}
-		return default(T);
+        if (!values.TryGetValue(key, out res) || string.IsNullOrEmpty(res)) return default(T);
+
+        if (typeof(T) == typeof(string))
+            return (T)(object)res;
+        if (typeof(T) == typeof(bool))
+            return (T)(object)bool.Parse(res);
+        if (typeof(T) == typeof(int))
+            return (T)(object)int.Parse(res);
+        if (typeof(T) == typeof(int?))
+            return (T)(object)int.Parse(res);
+        if (typeof(T) == typeof(float))
+            return (T)(object)float.Parse(res);
+        if (typeof(T) == typeof(float?))
+            return (T)(object)float.Parse(res);
+        if (typeof(T) == typeof(long?))
+            return (T)(object)long.Parse(res);
+        if (typeof(T) == typeof(Vector3D))
+        {
+            var d = res.Split(':');
+            return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
+        }
+        if (typeof(T) == typeof(Vector3D?))
+        {
+            var d = res.Split(':');
+            return (T)(object)new Vector3D(double.Parse(d[0]), double.Parse(d[1]), double.Parse(d[2]));
+        }
+        if (typeof(T) == typeof(List<byte>))
+        {
+            var d = res.Split(':');
+            return (T)(object)d.Select(byte.Parse).ToList();
+        }
+        if (typeof(T) == typeof(MinerState))
+        {
+            return (T)Enum.Parse(typeof(MinerState), res);
+        }
+
+        return default(T);
 	}
 
 	public PersistentState Load(string storage)
@@ -632,7 +621,7 @@ public class PersistentState
 
 	string Serialize()
 	{
-		string[] pairs = new string[]
+		var pairs = new[]
 		{
 			"LifetimeAcceptedTasks=" + LifetimeAcceptedTasks,
 			"LifetimeOperationTime=" + LifetimeOperationTime,
@@ -808,7 +797,7 @@ Vector3D? castedSurfacePoint;
 Vector3D? castedNormal;
 public void RaycastTaskHandler(string[] cmdString)
 {
-	var cam = cameras.Where(c => c.IsActive).FirstOrDefault();
+	var cam = cameras.FirstOrDefault(c => c.IsActive);
 	if (cam != null)
 	{
 		cam.CustomData = "";
@@ -924,15 +913,9 @@ public class MinerController
 		return pState.MinerState;
 	}
 
-	public PersistentState pState
-	{
-		get
-		{
-			return stateWrapper.PState;
-		}
-	}
+	public PersistentState pState => stateWrapper.PState;
 
-	Func<string, TargetTelemetry> ntv;
+    Func<string, TargetTelemetry> ntv;
 	StateWrapper stateWrapper;
 	public MinerController(IMyGridTerminalSystem gts, IMyIntergridCommunicationSystem igc, StateWrapper stateWrapper,
 			Func<string, TargetTelemetry> GetNTV)
@@ -951,12 +934,12 @@ public class MinerController
 		gts.GetBlocksOfType(batteries, b => b.IsSameConstructAs(me));
 		gts.GetBlocksOfType(tanks, b => b.IsSameConstructAs(me));
 
-		List<IMyTimerBlock> triggers = new List<IMyTimerBlock>();
+		var triggers = new List<IMyTimerBlock>();
 		gts.GetBlocksOfType(triggers, b => b.IsSameConstructAs(me));
 		tts = new TimerTriggerService(triggers);
 
 		float maxR = 0;
-		float padding = me.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 2f : 1.5f;
+		var padding = me.CubeGrid.GridSizeEnum == MyCubeSize.Large ? 2f : 1.5f;
 		foreach (var d in drills)
 		{
 			var r = Vector3D.Reject(d.GetPosition() - fwReferenceBlock.GetPosition(), fwReferenceBlock.WorldMatrix.Forward).Length();
@@ -974,9 +957,9 @@ public class MinerController
 
 		gts.GetBlocksOfType(allFunctionalBlocks, b => b.IsSameConstructAs(me));
 	}
-	public void SetControlledUnit(IMyProgrammableBlock pCore)
+	public void SetControlledUnit(IMyProgrammableBlock target)
 	{
-		this.pCore = pCore;
+		this.pCore = target;
 	}
 	public void SetControlledUnit(APckUnit unit)
 	{
@@ -1025,10 +1008,7 @@ public class MinerController
 	public void CreateTask()
 	{
 		var ng = remCon.GetNaturalGravity();
-		if (ng != Vector3D.Zero)
-			pState.miningPlaneNormal = Vector3D.Normalize(ng);
-		else
-			pState.miningPlaneNormal = fwReferenceBlock.WorldMatrix.Forward;
+		pState.miningPlaneNormal = ng != Vector3D.Zero ? Vector3D.Normalize(ng) : fwReferenceBlock.WorldMatrix.Forward;
 
 		double elevation;
 		if (remCon.TryGetPlanetElevation(MyPlanetElevation.Surface, out elevation))
@@ -1048,39 +1028,43 @@ public class MinerController
 	public void InitiateHandshake() {
 		/* Assemble a transponder message.*/
 		var damBlck = allFunctionalBlocks.FirstOrDefault(b => !b.IsFunctional); // Damaged block, if exists.
-		var report = new TransponderMsg();
-		report.Id          = IGC.Me;
-		report.WM          = fwReferenceBlock.WorldMatrix;
-		report.v           = remCon.GetShipVelocities().LinearVelocity;
-		report.f_bat       = batteryCharge_cached;
-		report.f_bat_min   = Variables.Get<float>("battery-low-factor");
-		report.f_fuel      = fuelLevel_cached;
-		report.f_fuel_min  = Variables.Get<float>("gas-low-factor");
-		report.damage      = (damBlck != null ? damBlck.CustomName : "");
-		report.state       = pState.MinerState;
-		report.f_cargo     = cargoFullness_cached;
-		report.f_cargo_max = Variables.Get<float>("cargo-full-factor");
-		report.bAdaptive   = Toggle.C.Check("adaptive-mining");
-		report.bRecalled   = pState.bRecalled;
-		report.t_shaft     = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f;
-		report.t_ore       = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f;
-		report.bUnload     = bUnloading;
-		report.name        = me.CubeGrid.CustomName;
-		CurrentJob?.UpdateReport(report, pState.MinerState);
+		var report = new TransponderMsg
+        {
+            Id = IGC.Me,
+            WM = fwReferenceBlock.WorldMatrix,
+            v = remCon.GetShipVelocities().LinearVelocity,
+            f_bat = batteryCharge_cached,
+            f_bat_min = Variables.Get<float>("battery-low-factor"),
+            f_fuel = fuelLevel_cached,
+            f_fuel_min = Variables.Get<float>("gas-low-factor"),
+            damage = (damBlck != null ? damBlck.CustomName : ""),
+            state = pState.MinerState,
+            f_cargo = cargoFullness_cached,
+            f_cargo_max = Variables.Get<float>("cargo-full-factor"),
+            bAdaptive = Toggle.C.Check("adaptive-mining"),
+            bRecalled = pState.bRecalled,
+            t_shaft = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f,
+            t_ore = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f,
+            bUnload = bUnloading,
+            name = me.CubeGrid.CustomName
+        };
+        CurrentJob?.UpdateReport(report, pState.MinerState);
 
 		/* Assemble the data content for the handshake. */
-		var data = new MyTuple<string,MyTuple<MyTuple<long, string>, MyTuple<MatrixD, Vector3D>, MyTuple<byte, string, bool>, ImmutableArray<float>, MyTuple<bool, bool, float, float>, ImmutableArray<MyTuple<string, string>>>, string>();
-		data.Item1 = Variables.Get<string>("group-constraint");
-		data.Item2 = report.ToIgc();
-		data.Item3 = Ver;
+		var data = new MyTuple<string,MyTuple<MyTuple<long, string>, MyTuple<MatrixD, Vector3D>, MyTuple<byte, string, bool>, ImmutableArray<float>, MyTuple<bool, bool, float, float>, ImmutableArray<MyTuple<string, string>>>, string>
+            {
+                Item1 = Variables.Get<string>("group-constraint"),
+                Item2 = report.ToIgc(),
+                Item3 = Ver
+            };
 
-		BroadcastToChannel("miners.handshake", data);
+            BroadcastToChannel("miners.handshake", data);
 	}
 
 	public void Handle(List<MyIGCMessage> uniMsgs)
 	{
 		/* Update some expensive quantities. */
-		UpdateBatteryCharge(); // TODO: Maybe not necessary to update on every cycle
+		UpdateBatteryCharge(); // TODO: Maybe not necessary to update on every cycle. // Indeed but drones with small battery capacity might be afflicted by this.
 		UpdateFuelLevel();
 		switch (pState.MinerState) {
 		default:
@@ -1134,93 +1118,101 @@ public class MinerController
 
 			//"miners.handshake.reply"
 
-			if (msg.Tag == "miners.handshake.reply")
-			{
-				Log("Received reply from dispatcher " + msg.Source);
-				DispatcherId = msg.Source;
-			}
+			switch (msg.Tag)
+            {
+                case "miners.handshake.reply":
+                    Log("Received reply from dispatcher " + msg.Source);
+                    DispatcherId = msg.Source;
+                    break;
+                case "miners.normal":
+                {
+                    var normal = (Vector3D)msg.Data;
+                    Log("Was assigned a normal of " + normal);
+                    pState.miningPlaneNormal = normal;
+                    break;
+                }
+                case "miners.resume":
+                {
+                    var normal = (Vector3D)msg.Data;
+                    Log("Received resume command. Clearing state, running MineCommandHandler, assigned a normal of " + normal);
+                    stateWrapper.ClearPersistentState();
+                    pState.miningPlaneNormal = normal;
+                    MineCommandHandler();
+                    break;
+                }
+                case "command":
+                    switch (msg.Data.ToString())
+                    {
+                        case "force-finish":
+                            FinishAndDockHandler();
+                            break;
+                        case "mine":
+                            MineCommandHandler();
+                            break;
+                    }
 
-			if (msg.Tag == "miners.normal")
-			{
-				var normal = (Vector3D)msg.Data;
-				Log("Was assigned a normal of " + normal);
-				pState.miningPlaneNormal = normal;
-			}
+                    break;
+                case "set-value":
+                {
+                    var parts = ((string)msg.Data).Split(':');
+                    Log($"Set value '{parts[0]}' to '{parts[1]}'");
+                    Variables.Set(parts[0], parts[1]);
+                    break;
+                }
+                case "miners":
+                {
+                    if (!(msg.Data is MyTuple<string, Vector3D, Vector3D>)) {
+                        Log("Ignoring granted lock with malformed data.");
+                        continue;
+                    }
+                    var data = (MyTuple<string, Vector3D, Vector3D>)msg.Data;
+                    pState.p_FL = data.Item2;
+                    pState.n_FL = data.Item3;
 
-			if (msg.Tag == "miners.resume")
-			{
-				var normal = (Vector3D)msg.Data;
-				Log("Received resume command. Clearing state, running MineCommandHandler, assigned a normal of " + normal);
-				stateWrapper.ClearPersistentState();
-				pState.miningPlaneNormal = normal;
-				MineCommandHandler();
-			}
+                    if (!string.IsNullOrEmpty(ObtainedLock) && (ObtainedLock != data.Item1)) {
+                        //ReleaseLock(ObtainedLock);
+                        Log($"{data.Item1} common-airspace-lock hides current ObtainedLock {ObtainedLock}!");
+                    }
+                    ObtainedLock = data.Item1;
+                    Log(data.Item1 + " common-airspace-lock-granted");
 
-			if (msg.Tag == "command")
-			{
-				if (msg.Data.ToString() == "force-finish")
-					FinishAndDockHandler();
-				if (msg.Data.ToString() == "mine")
-					MineCommandHandler();
-			}
-
-			if (msg.Tag == "set-value")
-			{
-				var parts = ((string)msg.Data).Split(':');
-				Log($"Set value '{parts[0]}' to '{parts[1]}'");
-				Variables.Set(parts[0], parts[1]);
-			}
-
-			if (msg.Tag == "miners")
-			{
-				if (!(msg.Data is MyTuple<string, Vector3D, Vector3D>)) {
-					Log("Ignoring granted lock with malformed data.");
-					continue;
-				}
-				var data = (MyTuple<string, Vector3D, Vector3D>)msg.Data;
-				pState.p_FL = data.Item2;
-				pState.n_FL = data.Item3;
-
-				if (!string.IsNullOrEmpty(ObtainedLock) && (ObtainedLock != data.Item1)) {
-					//ReleaseLock(ObtainedLock);
-					Log($"{data.Item1} common-airspace-lock hides current ObtainedLock {ObtainedLock}!");
-				}
-				ObtainedLock = data.Item1;
-				Log(data.Item1 + " common-airspace-lock-granted");
-
-				// can fly!
-				// ("general" also covers "mining-site")
-				if (   WaitedSection == data.Item1
-					|| (WaitedSection == LOCK_NAME_MiningSection && data.Item1 == LOCK_NAME_GeneralSection))
-					Dispatch();
-			}
-
-			if (msg.Tag == "report.request")
-			{
-				/* Progress report requested, compile and send the report. */
-				var damBlck = allFunctionalBlocks.FirstOrDefault(b => !b.IsFunctional); // Damaged block, if exists.
-				var report = new TransponderMsg();
-				report.Id          = IGC.Me;
-				report.WM          = fwReferenceBlock.WorldMatrix;
-				report.v           = remCon.GetShipVelocities().LinearVelocity;
-				report.f_bat       = batteryCharge_cached;
-				report.f_bat_min   = Variables.Get<float>("battery-low-factor");
-				report.f_fuel      = fuelLevel_cached;
-				report.f_fuel_min  = Variables.Get<float>("gas-low-factor");
-				report.damage      = (damBlck != null ? damBlck.CustomName : "");
-				report.state       = pState.MinerState;
-				report.f_cargo     = cargoFullness_cached;
-				report.f_cargo_max = Variables.Get<float>("cargo-full-factor");
-				report.bAdaptive   = Toggle.C.Check("adaptive-mining");
-				report.bRecalled   = pState.bRecalled;
-				report.t_shaft     = CurrentJob != null ? CurrentJob.GetCurrentDepth() : 0f;
-				report.t_ore       = CurrentJob != null ? CurrentJob.lastFoundOreDepth.GetValueOrDefault(0f) : 0f;
-				report.bUnload     = bUnloading;
-				report.name        = me.CubeGrid.CustomName;
-				CurrentJob?.UpdateReport(report, pState.MinerState);
-				IGC.SendBroadcastMessage("miners.report", report.ToIgc());
-			}
-		}
+                    // can fly!
+                    // ("general" also covers "mining-site")
+                    if (   WaitedSection == data.Item1
+                           || (WaitedSection == LOCK_NAME_MiningSection && data.Item1 == LOCK_NAME_GeneralSection))
+                        Dispatch();
+                    break;
+                }
+                case "report.request":
+                {
+                    /* Progress report requested, compile and send the report. */
+                    var damBlck = allFunctionalBlocks.FirstOrDefault(b => !b.IsFunctional); // Damaged block, if exists.
+                    var report = new TransponderMsg
+                    {
+                        Id = IGC.Me,
+                        WM = fwReferenceBlock.WorldMatrix,
+                        v = remCon.GetShipVelocities().LinearVelocity,
+                        f_bat = batteryCharge_cached,
+                        f_bat_min = Variables.Get<float>("battery-low-factor"),
+                        f_fuel = fuelLevel_cached,
+                        f_fuel_min = Variables.Get<float>("gas-low-factor"),
+                        damage = (damBlck != null ? damBlck.CustomName : ""),
+                        state = pState.MinerState,
+                        f_cargo = cargoFullness_cached,
+                        f_cargo_max = Variables.Get<float>("cargo-full-factor"),
+                        bAdaptive = Toggle.C.Check("adaptive-mining"),
+                        bRecalled = pState.bRecalled,
+                        t_shaft = CurrentJob?.GetCurrentDepth() ?? 0f,
+                        t_ore = CurrentJob?.lastFoundOreDepth ?? 0f,
+                        bUnload = bUnloading,
+                        name = me.CubeGrid.CustomName
+                    };
+                    CurrentJob?.UpdateReport(report, pState.MinerState);
+                    IGC.SendBroadcastMessage("miners.report", report.ToIgc());
+                    break;
+                }
+            }
+        }
 
 		while (minerChannel.HasPendingMessage)
 		{
@@ -1290,7 +1282,7 @@ public class MinerController
 
 	public void LogMsg(object msg, bool outgoing)
 	{
-		string data = msg.GetType().Name;
+		var data = msg.GetType().Name;
 		if (msg is string)
 			data = (string)msg;
 		else if ((msg is ImmutableArray<Vector3D>) || (msg is Vector3D))
@@ -1323,16 +1315,20 @@ public class MinerController
 
 	public void ResumeJobOnWorldLoad()
 	{
-		CurrentJob = new MiningJob(this);
-		CurrentJob.SessionStartedAt = DateTime.Now;
-		// TODO: restore some stats stuff
+		CurrentJob = new MiningJob(this)
+        {
+            SessionStartedAt = DateTime.Now
+        };
+        // TODO: restore some stats stuff
 	}
 
 	public void MineCommandHandler()
 	{
-		CurrentJob = new MiningJob(this);
-		CurrentJob.SessionStartedAt = DateTime.Now;
-		pState.LifetimeAcceptedTasks++;
+		CurrentJob = new MiningJob(this)
+        {
+            SessionStartedAt = DateTime.Now
+        };
+        pState.LifetimeAcceptedTasks++;
 		if (!TryResumeFromDock())
 		{
 			/* This is the agent that was used for task designation.
@@ -1343,12 +1339,9 @@ public class MinerController
 	}
 
 	public void SkipCommandHandler()
-	{
-		if (CurrentJob != null)
-		{
-			CurrentJob.SkipShaft();
-		}
-	}
+    {
+        CurrentJob?.SkipShaft();
+    }
 
 	/**
 	 * \brief Plan the agent's way home.
@@ -1451,7 +1444,7 @@ public class MinerController
 				var cmds = cmd.Split(new[] { "],[" }, StringSplitOptions.RemoveEmptyEntries).Select(s => s.Trim('[', ']')).ToList();
 				foreach (var i in cmds)
 				{
-					string[] cmdParts = i.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
+					var cmdParts = i.Split(new[] { ':' }, StringSplitOptions.RemoveEmptyEntries);
 					if (cmdParts[0] == "command")
 					{
 						ApckRegistry.RunCommand(cmdParts[1], cmdParts);
@@ -1517,7 +1510,7 @@ public class MinerController
 
 	float GetMyTerminalBlockHealth(IMyTerminalBlock block)
 	{
-		IMySlimBlock slimblock = block.CubeGrid.GetCubeBlock(block.Position);
+		var slimblock = block.CubeGrid.GetCubeBlock(block.Position);
 		if (slimblock != null)
 			return (slimblock.BuildIntegrity - slimblock.CurrentDamage) / slimblock.MaxIntegrity;
 		else
@@ -1526,7 +1519,7 @@ public class MinerController
 
 	void TagDamagedTerminalBlocks(IMyTerminalBlock myTerminalBlock, float health, bool onlyNonFunctional)
 	{
-		string name = myTerminalBlock.CustomName;
+		var name = myTerminalBlock.CustomName;
 		if ((health < 1f) && (!onlyNonFunctional || !myTerminalBlock.IsFunctional))
 		{
 			if (!(myTerminalBlock is IMyRadioAntenna) && !(myTerminalBlock is IMyBeacon))
@@ -1536,18 +1529,18 @@ public class MinerController
 			string taggedName;
 			if (name.Contains("||"))
 			{
-				string pattern = @"(?<=DAMAGED: )(?<label>\d+)(?=%)";
-				System.Text.RegularExpressions.Regex r = new System.Text.RegularExpressions.Regex(pattern);
+				var pattern = @"(?<=DAMAGED: )(?<label>\d+)(?=%)";
+				var r = new System.Text.RegularExpressions.Regex(pattern);
 				taggedName = r.Replace(
 					name,
-					delegate (System.Text.RegularExpressions.Match m)
-					{
+					delegate
+                    {
 						return (health * 100).ToString("F0");
 					});
 			}
 			else
 			{
-				taggedName = string.Format("{0} || DAMAGED: {1}%", name, health.ToString("F0"));
+				taggedName = $"{name} || DAMAGED: {health:F0}%";
 				Log($"{name} was damaged. Showing on HUD.");
 			}
 			myTerminalBlock.CustomName = taggedName;
@@ -1562,7 +1555,7 @@ public class MinerController
 	{
 		if (myTerminalBlock.CustomName.Contains("||"))
 		{
-			string name = myTerminalBlock.CustomName;
+			var name = myTerminalBlock.CustomName;
 			myTerminalBlock.CustomName = name.Split('|')[0].Trim();
 			if (!(myTerminalBlock is IMyRadioAntenna) && !(myTerminalBlock is IMyBeacon))
 			{
@@ -1608,14 +1601,15 @@ public class MinerController
 		float spaceNominal = 0;
 		float spaceOccupied = 0;
 		cargoMass_cached = 0;
-		for (int i = 0; i < allContainers.Count; i++) {
-			var inv = allContainers[i].GetInventory(0);
-			if (inv == null)
-				continue;
-			spaceNominal += (float)inv.MaxVolume;
-			spaceOccupied += (float)inv.CurrentVolume;
-			cargoMass_cached += (float)inv.CurrentMass;
-		}
+		foreach (var t in allContainers)
+        {
+            var inv = t.GetInventory(0);
+            if (inv == null)
+                continue;
+            spaceNominal += (float)inv.MaxVolume;
+            spaceOccupied += (float)inv.CurrentVolume;
+            cargoMass_cached += (float)inv.CurrentMass;
+        }
 		cargoFullness_cached = (spaceNominal > 0 ? spaceOccupied / spaceNominal : 1f);
 	}
 
@@ -1638,7 +1632,7 @@ public class MinerController
 		bool CurrentWpReached(double tolerance)
 		{
 			if (c.pState.currentWp.HasValue) {
-				double dist = (c.pState.currentWp.Value - c.fwReferenceBlock.WorldMatrix.Translation).Length();
+				var dist = (c.pState.currentWp.Value - c.fwReferenceBlock.WorldMatrix.Translation).Length();
 				E.Echo($"ds_WP: {dist:f2}");
 			}
 			return (!c.pState.currentWp.HasValue || (c.pState.currentWp.Value - c.fwReferenceBlock.WorldMatrix.Translation).Length() <= tolerance);
@@ -1729,10 +1723,10 @@ public class MinerController
 		 */
 		public Vector3D CalcShaftAbovePoint()
 		{
-			double e = Vector3D.Dot(c.GetMiningPlaneNormal(), c.pState.n_FL);
+			var e = Vector3D.Dot(c.GetMiningPlaneNormal(), c.pState.n_FL);
 			//TODO: Can the mining plane be orthogonal to the flight levels?
 			//      Then is e == 0.
-			double d = Vector3D.Dot(c.pState.p_FL - c.pState.miningEntryPoint.Value, c.pState.n_FL) / e;
+			var d = Vector3D.Dot(c.pState.p_FL - c.pState.miningEntryPoint.Value, c.pState.n_FL) / e;
 			return c.pState.miningEntryPoint.Value + c.GetMiningPlaneNormal() * d;
 		}
 
@@ -1745,12 +1739,12 @@ public class MinerController
 		 */
 		public Vector3D CalcDockAbovePoint(Vector3D r_D, Vector3D n_D)
 		{
-			double e = Vector3D.Dot(n_D, c.pState.n_FL);
+			var e = Vector3D.Dot(n_D, c.pState.n_FL);
 			if (Math.Abs(e) < 1e-5) {
 				//TODO: Docking axis and flight level are parallel! What to do?
 				E.Echo("Error: Docking axis and flight level are parallel. Cannot compute flight plan.");
 			}
-			double d = Vector3D.Dot(c.pState.p_FL - r_D, c.pState.n_FL) / e; 
+			var d = Vector3D.Dot(c.pState.p_FL - r_D, c.pState.n_FL) / e; 
 			return r_D + n_D * d;
 		}
 
@@ -1759,366 +1753,378 @@ public class MinerController
 		 */
 		public void HandleState(MinerState state)
 		{
-			if (state == MinerState.GoingToEntry) {
+			switch (state)
+            {
+                case MinerState.GoingToEntry:
+                {
+                    /* Have we been ordered back to base? */
+                    if (c.pState.bRecalled) {
+                        c.SetState(MinerState.GoingToUnload);
+                        c.drills.ForEach(d => d.Enabled = false);
+                        var pt = CalcShaftAbovePoint();
+                        c.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
+                        c.pState.currentWp = pt;
+                        return;
+                    }
 
-				/* Have we been ordered back to base? */
-				if (c.pState.bRecalled) {
-					c.SetState(MinerState.GoingToUnload);
-					c.drills.ForEach(d => d.Enabled = false);
-					var pt = CalcShaftAbovePoint();
-					c.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
-					c.pState.currentWp = pt;
-					return;
-				}
+                    if (!CurrentWpReached(0.5f))
+                        return; // We are not there yet. Keep descending.
 
-				if (!CurrentWpReached(0.5f))
-					return; // We are not there yet. Keep descending.
-
-				/* We just left controlled airspace. Release the lock ("mining-site"
+                    /* We just left controlled airspace. Release the lock ("mining-site"
 				 * or "general", whatever we have been granted).                      */
-				c.ReleaseLock(c.ObtainedLock);
+                    c.ReleaseLock(c.ObtainedLock);
 
-				/* Switch on the drills, if not running already. */
-				c.drills.ForEach(d => d.Enabled = true);
+                    /* Switch on the drills, if not running already. */
+                    c.drills.ForEach(d => d.Enabled = true);
 
-				/* Descend into the shaft. */
-				c.SetState(MinerState.Drilling);
-				//c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward,SpeedLimit=0.6:0:0:0");
-				c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward" +
-					",AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';') +
-					",UpNormal=1;0;0,SpeedLimit=" + Variables.Get<float>("speed-drill") + ":0:0:0");
+                    /* Descend into the shaft. */
+                    c.SetState(MinerState.Drilling);
+                    //c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward,SpeedLimit=0.6:0:0:0");
+                    c.CommandAutoPillock("command:create-wp:Name=drill,Ng=Forward,PosDirectionOverride=Forward" +
+                                         ",AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';') +
+                                         ",UpNormal=1;0;0,SpeedLimit=" + Variables.Get<float>("speed-drill") + ":0:0:0");
+                    break;
+                }
+                case MinerState.Drilling:
+                {
+                    /* Update some reporting stuff. */
+                    var currentDepth = GetCurrentDepth();
+                    E.Echo($"Depth: current: {currentDepth:f1} skip: {c.pState.skipDepth:f1}");
+                    E.Echo($"Depth: least: {c.pState.leastDepth:f1} max: {c.pState.maxDepth:f1}");
+                    E.Echo($"Cargo: {c.cargoFullness_cached:f2} / " + Variables.Get<float>("cargo-full-factor").ToString("f2"));
 
-			} else if (state == MinerState.Drilling) {
-
-				/* Update some reporting stuff. */
-				float currentDepth = GetCurrentDepth();
-				E.Echo($"Depth: current: {currentDepth:f1} skip: {c.pState.skipDepth:f1}");
-				E.Echo($"Depth: least: {c.pState.leastDepth:f1} max: {c.pState.maxDepth:f1}");
-				E.Echo($"Cargo: {c.cargoFullness_cached:f2} / " + Variables.Get<float>("cargo-full-factor").ToString("f2"));
-
-				if (c.pState.bRecalled) {
-					GetOutTheShaft(); // We have been ordered back to base.
-					return;
-				}
+                    if (c.pState.bRecalled) {
+                        GetOutTheShaft(); // We have been ordered back to base.
+                        return;
+                    }
 						
-				if (currentDepth > c.pState.maxDepth) {
-					GetOutTheShaft(); // We have reached max depth, job complete.
-					return;
-				}
+                    if (currentDepth > c.pState.maxDepth) {
+                        GetOutTheShaft(); // We have reached max depth, job complete.
+                        return;
+                    }
 
-				if (!c.CheckBatteriesAndIntegrityThrottled(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor"))) {
-					GetOutTheShaft(); // We need to return to base for maintenance reasons. 
-					return;          //TODO: Emit MAYDAY if docking port is damaged or we cannot make it back to base for other reasons.
-				}
+                    if (!c.CheckBatteriesAndIntegrityThrottled(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor"))) {
+                        GetOutTheShaft(); // We need to return to base for maintenance reasons. 
+                        return;          //TODO: Emit MAYDAY if docking port is damaged or we cannot make it back to base for other reasons.
+                    }
 
-				if (c.CargoIsFull()) {
-					GetOutTheShaft(); // Cargo full, return to base.
-					return;
-				}
+                    if (c.CargoIsFull()) {
+                        GetOutTheShaft(); // Cargo full, return to base.
+                        return;
+                    }
 
-				if (currentDepth <= c.pState.skipDepth) {
-					c.drills.ForEach(d => d.UseConveyorSystem = false);
-					return;
-				}
+                    if (currentDepth <= c.pState.skipDepth) {
+                        c.drills.ForEach(d => d.UseConveyorSystem = false);
+                        return;
+                    }
 				
-				// skipped surface layer, checking for ore and caring about cargo level
-				c.drills.ForEach(d => d.UseConveyorSystem = true);
+                    // skipped surface layer, checking for ore and caring about cargo level
+                    c.drills.ForEach(d => d.UseConveyorSystem = true);
 
-				bool bValOre = CargoIsGettingValuableOre();
-				if (bValOre)
-					lastFoundOreDepth = Math.Max(currentDepth, lastFoundOreDepth ?? 0);
+                    var bValOre = CargoIsGettingValuableOre();
+                    if (bValOre)
+                        lastFoundOreDepth = Math.Max(currentDepth, lastFoundOreDepth ?? 0);
 
-				if (currentDepth <= c.pState.leastDepth)
-					return;
+                    if (currentDepth <= c.pState.leastDepth)
+                        return;
 
-				if (bValOre) {
-					if ((!MinFoundOreDepth.HasValue) || (MinFoundOreDepth > currentDepth))
-						MinFoundOreDepth = currentDepth;
-					if ((!MaxFoundOreDepth.HasValue) || (MaxFoundOreDepth < currentDepth))
-						MaxFoundOreDepth = currentDepth;
-					if (Toggle.C.Check("adaptive-mining")) {
-						c.pState.skipDepth = MinFoundOreDepth.Value - 2f;
-						c.pState.maxDepth = MaxFoundOreDepth.Value + 2f;
-					}
-				}
-				else
-				{
-					/* Give up drilling 2 m below the last valuable ore. */
-					if (lastFoundOreDepth.HasValue && (currentDepth - lastFoundOreDepth > 2)) {
-						GetOutTheShaft(); // No more ore expected in this shaft, job complete.
-					}
-				}
-			}
-			
-			if (state == MinerState.AscendingInShaft) {
+                    if (bValOre) {
+                        if ((!MinFoundOreDepth.HasValue) || (MinFoundOreDepth > currentDepth))
+                            MinFoundOreDepth = currentDepth;
+                        if ((!MaxFoundOreDepth.HasValue) || (MaxFoundOreDepth < currentDepth))
+                            MaxFoundOreDepth = currentDepth;
+                        if (Toggle.C.Check("adaptive-mining")) {
+                            c.pState.skipDepth = MinFoundOreDepth.Value - 2f;
+                            c.pState.maxDepth = MaxFoundOreDepth.Value + 2f;
+                        }
+                    }
+                    else
+                    {
+                        /* Give up drilling 2 m below the last valuable ore. */
+                        if (lastFoundOreDepth.HasValue && (currentDepth - lastFoundOreDepth > 2)) {
+                            GetOutTheShaft(); // No more ore expected in this shaft, job complete.
+                        }
+                    }
 
-				if (!CurrentWpReached(0.5f))
-					return; // We have not reached the top of the shaft yet.
+                    break;
+                }
+                case MinerState.AscendingInShaft:
+                {
+                    if (!CurrentWpReached(0.5f))
+                        return; // We have not reached the top of the shaft yet.
 						
-				// kinda expensive
-				if (c.pState.bRecalled || c.CargoIsFull() || !c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor")))
-				{
-					// we reached cargo limit
-					c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
-					{
-						mc.SetState(MinerState.GoingToUnload);
-						mc.drills.ForEach(d => d.Enabled = false);
-						var pt = CalcShaftAbovePoint();
-						mc.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
-						c.pState.currentWp = pt;
-					});
-				}
-				else
-					/* Current job is done, request a new one. */
-					SkipShaft();
+                    // kinda expensive
+                    if (c.pState.bRecalled || c.CargoIsFull() || !c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-low-factor"), Variables.Get<float>("gas-low-factor")))
+                    {
+                        // we reached cargo limit
+                        c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
+                        {
+                            mc.SetState(MinerState.GoingToUnload);
+                            mc.drills.ForEach(d => d.Enabled = false);
+                            var pt = CalcShaftAbovePoint();
+                            mc.CommandAutoPillock("command:create-wp:Name=GoingToUnload,Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
+                            c.pState.currentWp = pt;
+                        });
+                    }
+                    else
+                        /* Current job is done, request a new one. */
+                        SkipShaft();
 
-			} else if (state == MinerState.ChangingShaft) {
-
-				// triggered 15m above old mining entry
-				if (!CurrentWpReached(0.5f))
-					return; // Not reached the point above the shaft yet. Keep flying.
+                    break;
+                }
+                case MinerState.ChangingShaft:
+                {
+                    // triggered 15m above old mining entry
+                    if (!CurrentWpReached(0.5f))
+                        return; // Not reached the point above the shaft yet. Keep flying.
 				
-				var pt = CalcShaftAbovePoint();
-				c.CommandAutoPillock("command:create-wp:Name=ChangingShaft (Traverse),Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
-				c.pState.currentWp = pt;
-				c.SetState(MinerState.ReturningToShaft);
-				c.ReleaseLock(c.ObtainedLock);
-			}
+                    var pt = CalcShaftAbovePoint();
+                    c.CommandAutoPillock("command:create-wp:Name=ChangingShaft (Traverse),Ng=Forward:" + VectorOpsHelper.V3DtoBroadcastString(pt));
+                    c.pState.currentWp = pt;
+                    c.SetState(MinerState.ReturningToShaft);
+                    c.ReleaseLock(c.ObtainedLock);
+                    break;
+                }
+                case MinerState.Takeoff:
+                {
+                    if (!CurrentWpReached(1.0f))
+                        return; // Not reached the point above the docking port yet. Keep flying.
 
-			if (state == MinerState.Takeoff)
-			{
-				if (!CurrentWpReached(1.0f))
-					return; // Not reached the point above the docking port yet. Keep flying.
+                    /* If received recall order while taking off, keep the lock and land again. */
+                    //TODO: ATC has probably re-assigned the docking port already.
+                    //      Have the dispatcher keep the docking port reserved, until the airspace lock is returned after takeoff.
+                    //if (c.pState.bRecalled) {
+                    //	return;
+                    //}
 
-				/* If received recall order while taking off, keep the lock and land again. */
-				//TODO: ATC has probably re-assigned the docking port already.
-				//      Have the dispatcher keep the docking port reserved, until the airspace lock is returned after takeoff.
-				//if (c.pState.bRecalled) {
-				//	return;
-				//}
+                    /* Release the "general" or "base" airspace lock, if held. */
+                    if (c.ObtainedLock != null)
+                        c.ReleaseLock(c.ObtainedLock);
 
-				/* Release the "general" or "base" airspace lock, if held. */
-				if (c.ObtainedLock != null)
-					c.ReleaseLock(c.ObtainedLock);
+                    //TODO: This is a quick fix, because we need ATC to assign a new docking port.
+                    //      Fix this, see above.
+                    if (c.pState.bRecalled) {
+                        c.ArrangeDocking();
+                        return;
+                    }
 
-				//TODO: This is a quick fix, because we need ATC to assign a new docking port.
-				//      Fix this, see above.
-				if (c.pState.bRecalled) {
-					c.ArrangeDocking();
-					return;
-				}
+                    /* Lay in a course to above the shaft. */
 
-				/* Lay in a course to above the shaft. */
-
-				/* Calculate the intersection of the shaft
+                    /* Calculate the intersection of the shaft
 				 * axis with the assigned flight level. */
-				var aboveShaft = CalcShaftAbovePoint();
-				c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" 
-				    + VectorOpsHelper.V3DtoBroadcastString( c.GetMiningPlaneNormal() ).Replace(':',';')
-				    + ":" + VectorOpsHelper.V3DtoBroadcastString(aboveShaft));
-				c.pState.currentWp = aboveShaft;
-				c.SetState(MinerState.ReturningToShaft);
-				return;
+                    var aboveShaft = CalcShaftAbovePoint();
+                    c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" 
+                                         + VectorOpsHelper.V3DtoBroadcastString( c.GetMiningPlaneNormal() ).Replace(':',';')
+                                         + ":" + VectorOpsHelper.V3DtoBroadcastString(aboveShaft));
+                    c.pState.currentWp = aboveShaft;
+                    c.SetState(MinerState.ReturningToShaft);
+                    return;
+                }
+                case MinerState.ReturningToShaft:
+                {
+                    /* Have we been ordered back to base? */
+                    if (c.pState.bRecalled) {
 
-			} else if (state == MinerState.ReturningToShaft) {
+                        /* Have we already asked for a lock "mining-site"? If yes, cancel the request. */
+                        if (c.WaitingForLock) {
+                            c.BroadcastToChannel("miners", "common-airspace-ask-for-lock:");
+                            c.WaitingForLock = false;
+                            c.waitedActions.Clear();
+                        }
 
-				/* Have we been ordered back to base? */
-				if (c.pState.bRecalled) {
+                        /* Ask ATC for a free dockingport. */
+                        c.ArrangeDocking();
 
-					/* Have we already asked for a lock "mining-site"? If yes, cancel the request. */
-					if (c.WaitingForLock) {
-						c.BroadcastToChannel("miners", "common-airspace-ask-for-lock:");
-						c.WaitingForLock = false;
-						c.waitedActions.Clear();
-					}
+                        /* Stop movement, don't keep flying to the mining site. */
+                        //TODO: In the meantime, APck keeps flying us towards the mining site. 
+                        //      Instead, we should bring the drone to a halt immediately.
+                        return;
+                    }
 
-					/* Ask ATC for a free dockingport. */
-					c.ArrangeDocking();
+                    if (!CurrentWpReached(1.0f))
+                        return; // Not reached the point above the shaft yet. Keep flying.
 
-					/* Stop movement, don't keep flying to the mining site. */
-					//TODO: In the meantime, APck keeps flying us towards the mining site. 
-					//      Instead, we should bring the drone to a halt immediately.
-					return;
-				}
+                    /* Acquire "mining-site" airspace lock before descending into the shaft. */
+                    c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
+                    {
+                        mc.SetState(MinerState.GoingToEntry);
 
-				if (!CurrentWpReached(1.0f))
-					return; // Not reached the point above the shaft yet. Keep flying.
+                        /* Start the drills. */
+                        c.drills.ForEach(d => d.Enabled = true);
 
-				/* Acquire "mining-site" airspace lock before descending into the shaft. */
-				c.EnterSharedSpace(LOCK_NAME_MiningSection, mc =>
-				{
-					mc.SetState(MinerState.GoingToEntry);
+                        /* Command the auto pilot to descend to the shaft. */
+                        var entry = $"command:create-wp:Name=drill entry,Ng=Forward,UpNormal=1;0;0,AimNormal=" +
+                                    $"{VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')}:";
 
-					/* Start the drills. */
-					c.drills.ForEach(d => d.Enabled = true);
+                        double elevation;
+                        if (Toggle.C.Check("adjust-entry-by-elevation") && c.remCon.TryGetPlanetElevation(MyPlanetElevation.Surface, out elevation))
+                        {
+                            Vector3D plCenter;
+                            c.remCon.TryGetPlanetPosition(out plCenter);
+                            var plNorm = Vector3D.Normalize(c.pState.miningEntryPoint.Value - plCenter);
+                            var h = (c.fwReferenceBlock.WorldMatrix.Translation - plCenter).Length() - elevation + 5f;
 
-					/* Command the auto pilot to descend to the shaft. */
-					var entry = $"command:create-wp:Name=drill entry,Ng=Forward,UpNormal=1;0;0,AimNormal=" +
-							$"{VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')}:";
+                            var elevationAdjustedEntryPoint = plCenter + plNorm * h;
+                            mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(elevationAdjustedEntryPoint));
+                            c.pState.currentWp = elevationAdjustedEntryPoint;
+                        }
+                        else
+                        {
+                            mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(c.pState.miningEntryPoint.Value));
+                            c.pState.currentWp = c.pState.miningEntryPoint;
+                        }
+                    });
+                    break;
+                }
+                case MinerState.GoingToUnload:
+                {
+                    if (CurrentWpReached(0.5f))
+                    {
+                        c.ArrangeDocking();
+                    }
 
-					double elevation;
-					if (Toggle.C.Check("adjust-entry-by-elevation") && c.remCon.TryGetPlanetElevation(MyPlanetElevation.Surface, out elevation))
-					{
-						Vector3D plCenter;
-						c.remCon.TryGetPlanetPosition(out plCenter);
-						var plNorm = Vector3D.Normalize(c.pState.miningEntryPoint.Value - plCenter);
-						var h = (c.fwReferenceBlock.WorldMatrix.Translation - plCenter).Length() - elevation + 5f;
+                    break;
+                }
+                case MinerState.ReturningHome:
+                {
+                    //TODO: Perform midcourse corrections (MCC) if docking port has moved by more than 1m.
+                    //      (e.g. issue a new APck command)
 
-						var elevationAdjustedEntryPoint = plCenter + plNorm * h;
-						mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(elevationAdjustedEntryPoint));
-						c.pState.currentWp = elevationAdjustedEntryPoint;
-					}
-					else
-					{
-						mc.CommandAutoPillock(entry + VectorOpsHelper.V3DtoBroadcastString(c.pState.miningEntryPoint.Value));
-						c.pState.currentWp = c.pState.miningEntryPoint;
-					}
-				});
-			}
+                    if (!CurrentWpReached(1.0f))
+                        return; // Not reached the point above the docking port yet. Keep flying.
 
-			if (state == MinerState.GoingToUnload)
-			{
-				if (CurrentWpReached(0.5f))
-				{
-					c.ArrangeDocking();
-				}
+                    c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
+                    {
+                        var dv = c.ntv("docking");
 
-			} else if (state == MinerState.ReturningHome) {
-						
-				//TODO: Perform midcourse corrections (MCC) if docking port has moved by more than 1m.
-				//      (e.g. issue a new APck command)
-
-				if (!CurrentWpReached(1.0f))
-					return; // Not reached the point above the docking port yet. Keep flying.
-
-				c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
-				{
-					TargetTelemetry dv = c.ntv("docking");
-
-					/* Calculate the intersection of the docking port
+                        /* Calculate the intersection of the docking port
 					 * axis with the assigned flight level.           */
-					var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
+                        var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
 
-					/* Command the final approach to the AP. */
-					c.CommandAutoPillock("command:create-wp:Name=DynamicDock.echelon,Ng=Forward,AimNormal="
-					+ VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')
-					+ ",TransformChannel=docking:"
-					+ VectorOpsHelper.V3DtoBroadcastString(Vector3D.Transform(r_aboveDock, MatrixD.Invert(dv.OrientationUnit.Value)))
-					+ ":command:pillock-mode:DockingFinal");
-					c.SetState(MinerState.Docking);
-				});
-
-			} else if (state == MinerState.WaitingForDocking) {
-
-				/* Get position (and other data) of the assigned docking port.
+                        /* Command the final approach to the AP. */
+                        c.CommandAutoPillock("command:create-wp:Name=DynamicDock.echelon,Ng=Forward,AimNormal="
+                                             + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':', ';')
+                                             + ",TransformChannel=docking:"
+                                             + VectorOpsHelper.V3DtoBroadcastString(Vector3D.Transform(r_aboveDock, MatrixD.Invert(dv.OrientationUnit.Value)))
+                                             + ":command:pillock-mode:DockingFinal");
+                        c.SetState(MinerState.Docking);
+                    });
+                    break;
+                }
+                case MinerState.WaitingForDocking:
+                {
+                    /* Get position (and other data) of the assigned docking port.
 				 * (Updated live, because it could be moving.)               */
-				TargetTelemetry dv = c.ntv("docking");
-				if (!dv.Position.HasValue)
-					return; // We have not yet received a position information for the docking port.
+                    var dv = c.ntv("docking");
+                    if (!dv.Position.HasValue)
+                        return; // We have not yet received a position information for the docking port.
 						
-				/* Lay in a course to above the docking port. */
-				var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
+                    /* Lay in a course to above the docking port. */
+                    var r_aboveDock = CalcDockAbovePoint(dv.Position.Value, dv.OrientationUnit.Value.Forward);
 							
-				//TODO: Set AimNormal to direction of docking port, not mining plane.
-				c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':',';')
-					                + ":" + VectorOpsHelper.V3DtoBroadcastString(r_aboveDock));
-				c.pState.currentWp = r_aboveDock;
-				c.SetState(MinerState.ReturningHome);
+                    //TODO: Set AimNormal to direction of docking port, not mining plane.
+                    c.CommandAutoPillock("command:create-wp:Name=xy,Ng=Forward,AimNormal=" + VectorOpsHelper.V3DtoBroadcastString(c.GetMiningPlaneNormal()).Replace(':',';')
+                        + ":" + VectorOpsHelper.V3DtoBroadcastString(r_aboveDock));
+                    c.pState.currentWp = r_aboveDock;
+                    c.SetState(MinerState.ReturningHome);
+                    break;
+                }
+                case MinerState.Docking:
+                {
+                    /* Connect the connector, if not done already. */
+                    if (c.docker.Status != MyShipConnectorStatus.Connected)
+                        return;
 
-			}
-
-			if (state == MinerState.Docking) {
-				/* Connect the connector, if not done already. */
-				if (c.docker.Status != MyShipConnectorStatus.Connected)
-					return;
-
-				/* If just connected, disable autopilot and release airspace lock.
+                    /* If just connected, disable autopilot and release airspace lock.
 				 * Set fuel tanks to stockpile, and batteries to recharge.       */
-				c.CommandAutoPillock("command:pillock-mode:Disabled");
-				c.remCon.DampenersOverride = false;
-				c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Recharge);
-				c.docker.OtherConnector.CustomData = "";
-				c.InvalidateDockingDto?.Invoke();
-				c.tanks.ForEach(b => b.Stockpile = true);
+                    c.CommandAutoPillock("command:pillock-mode:Disabled");
+                    c.remCon.DampenersOverride = false;
+                    c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Recharge);
+                    c.docker.OtherConnector.CustomData = "";
+                    c.InvalidateDockingDto?.Invoke();
+                    c.tanks.ForEach(b => b.Stockpile = true);
 
-				/* We just left controlled airspace. Release the lock ("base"
+                    /* We just left controlled airspace. Release the lock ("base"
 				 * or "general", whatever we have been granted).              */
-				if (c.ObtainedLock != null)
-					c.ReleaseLock(c.ObtainedLock);
+                    if (c.ObtainedLock != null)
+                        c.ReleaseLock(c.ObtainedLock);
 
-				c.SetState(MinerState.Docked);
-			}
-
-			if (state == MinerState.Docked)
-			{
-				E.Echo("Docking: Connected");
-				if (c.bUnloading = !CargoFlush()) {
-					/* Still unloading, remain docked. */
-					E.Echo("Docking: still have items");
-					return;
-				}
+                    c.SetState(MinerState.Docked);
+                    break;
+                }
+                case MinerState.Docked:
+                {
+                    E.Echo("Docking: Connected");
+                    if (c.bUnloading = !CargoFlush()) {
+                        /* Still unloading, remain docked. */
+                        E.Echo("Docking: still have items");
+                        return;
+                    }
 						
-				/* Wait until repaired, recharged and refuled. */
-				if (!c.CheckBatteriesAndIntegrity(1f, 1f)) {
-					/* We need to remain docked for maintenance. */
-					c.SetState(MinerState.Maintenance);
-					c.pState.LifetimeWentToMaintenance++;
-					Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
-						if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
-						{
-							c.SetState(MinerState.Docked);
-						}
-					});
-					return;
-				}
+                    /* Wait until repaired, recharged and refuled. */
+                    if (!c.CheckBatteriesAndIntegrity(1f, 1f)) {
+                        /* We need to remain docked for maintenance. */
+                        c.SetState(MinerState.Maintenance);
+                        c.pState.LifetimeWentToMaintenance++;
+                        Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
+                            if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
+                            {
+                                c.SetState(MinerState.Docked);
+                            }
+                        });
+                        return;
+                    }
 
-				/* If recalled, go to "Disabled" mode. */
-				if (c.pState.bRecalled) {
-					c.SetState(MinerState.Disabled);
-					c.pState.bRecalled = false;
-					c.embeddedUnit?.UpdateHUD();
-					AccountUnload();
-					c.pState.LifetimeOperationTime += (int)(DateTime.Now - SessionStartedAt).TotalSeconds;
-					c.stateWrapper.Save();
-					c.CurrentJob = null; //TODO: Tell the dispatcher that the job will not be completed.
-					return;
-				}
+                    /* If recalled, go to "Disabled" mode. */
+                    if (c.pState.bRecalled) {
+                        c.SetState(MinerState.Disabled);
+                        c.pState.bRecalled = false;
+                        c.embeddedUnit?.UpdateHUD();
+                        AccountUnload();
+                        c.pState.LifetimeOperationTime += (int)(DateTime.Now - SessionStartedAt).TotalSeconds;
+                        c.stateWrapper.Save();
+                        c.CurrentJob = null; //TODO: Tell the dispatcher that the job will not be completed.
+                        return;
+                    }
 
-				/* Unload and return to work. */
-				c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
-				{
-					/* Switch to internal power and open fuel tanks. */
-					c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Auto);
-					c.tanks.ForEach(b => b.Stockpile = false);
+                    /* Unload and return to work. */
+                    c.EnterSharedSpace(LOCK_NAME_BaseSection, mc =>
+                    {
+                        /* Switch to internal power and open fuel tanks. */
+                        c.batteries.ForEach(b => b.ChargeMode = ChargeMode.Auto);
+                        c.tanks.ForEach(b => b.Stockpile = false);
 
-					//c.docker.OtherConnector.CustomData = "";
-					AccountUnload();
+                        //c.docker.OtherConnector.CustomData = "";
+                        AccountUnload();
 
-					/* Lay in a course to the point above
+                        /* Lay in a course to the point above
 					 * docking port and engage autopilot. */
-					HandleUnload(c.docker.OtherConnector);
+                        HandleUnload(c.docker.OtherConnector);
 
-					/* Disconnect and lift off. */
-					c.docker.Disconnect();
-					c.SetState(MinerState.Takeoff);
-				});
+                        /* Disconnect and lift off. */
+                        c.docker.Disconnect();
+                        c.SetState(MinerState.Takeoff);
+                    });
+                    break;
+                }
+                case MinerState.Maintenance:
+                {
+                    // for world reload
+                    if ((c.PrevState != MinerState.Docking) && (c.docker.Status == MyShipConnectorStatus.Connected))
+                    {
+                        c.CommandAutoPillock("command:pillock-mode:Disabled");
+                        Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
+                            if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
+                            {
+                                c.SetState(MinerState.Docked);
+                            }
+                        });
+                    }
 
-			} else if (state == MinerState.Maintenance) {
-
-				// for world reload
-				if ((c.PrevState != MinerState.Docking) && (c.docker.Status == MyShipConnectorStatus.Connected))
-				{
-					c.CommandAutoPillock("command:pillock-mode:Disabled");
-					Scheduler.C.After(10000).RepeatWhile(() => c.GetState() == MinerState.Maintenance).RunCmd(() => {
-						if (c.CheckBatteriesAndIntegrity(Variables.Get<float>("battery-full-factor"), 0.99f))
-						{
-							c.SetState(MinerState.Docked);
-						}
-					});
-				}
-			}
-
-		}
+                    break;
+                }
+            }
+        }
 
 		/** \brief Unloads all cargo, returns true on success. */
 		bool CargoFlush()
@@ -2136,7 +2142,7 @@ public class MinerController
 			{
 				var items = new List<MyInventoryItem>();
 				localInv.GetItems(items);
-				for (int n = 0; n < items.Count; n++)
+				for (var n = 0; n < items.Count; n++)
 				{
 					var itemToPush = items[n];
 					IMyInventory destinationInv;
@@ -2281,16 +2287,17 @@ public class MinerController
 		{
 			/* Count all ore on board. */
 			float totalAmount = 0;
-			for (int i = 0; i < c.allContainers.Count; ++i) {
-				var inv = c.allContainers[i].GetInventory(0);
-				if (inv == null)
-					continue;
-				List<MyInventoryItem> items = new List<MyInventoryItem>();
-				inv.GetItems(items);
-				items.Where(ix => ix.Type.ToString().Contains("Ore") && !ix.Type.ToString().Contains("Stone")).ToList().ForEach(x => totalAmount += (float)x.Amount);
-			}
+			foreach (var container in c.allContainers)
+            {
+                var inv = container.GetInventory(0);
+                if (inv == null)
+                    continue;
+                var items = new List<MyInventoryItem>();
+                inv.GetItems(items);
+                items.Where(ix => ix.Type.ToString().Contains("Ore") && !ix.Type.ToString().Contains("Stone")).ToList().ForEach(x => totalAmount += (float)x.Amount);
+            }
 
-			bool gain = ((prevTickValCount > 0) && (totalAmount > prevTickValCount));
+			var gain = ((prevTickValCount > 0) && (totalAmount > prevTickValCount));
 
 			prevTickValCount = totalAmount;
 
@@ -2318,15 +2325,15 @@ static class VectorOpsHelper
 {
 	public static string V3DtoBroadcastString(params Vector3D[] vectors)
 	{
-		return string.Join(":", vectors.Select(v => string.Format("{0}:{1}:{2}", v.X, v.Y, v.Z)));
+		return string.Join(":", vectors.Select(v => $"{v.X}:{v.Y}:{v.Z}"));
 	}
 
 	public static string MtrDtoBroadcastString(MatrixD mat)
 	{
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < 4; i++)
+		var sb = new StringBuilder();
+		for (var i = 0; i < 4; i++)
 		{
-			for (int j = 0; j < 4; j++)
+			for (var j = 0; j < 4; j++)
 			{
 				sb.Append(mat[i, j] + ":");
 			}
@@ -2334,10 +2341,10 @@ static class VectorOpsHelper
 		return sb.ToString().TrimEnd(':');
 	}
 
-	public static Vector3D GetTangFreeDestinantion(MatrixD myMatrix, Vector3D pointTomove, BoundingSphereD dangerZone)
+	public static Vector3D GetTangFreeDestination(MatrixD myMatrix, Vector3D pointTomove, BoundingSphereD dangerZone)
 	{
-		RayD r = new RayD(myMatrix.Translation, Vector3D.Normalize(pointTomove - myMatrix.Translation));
-		double? collideDist = r.Intersects(dangerZone);
+		var r = new RayD(myMatrix.Translation, Vector3D.Normalize(pointTomove - myMatrix.Translation));
+		var collideDist = r.Intersects(dangerZone);
 
 		if (collideDist.HasValue)
 		{
@@ -2391,9 +2398,9 @@ static class VectorOpsHelper
 	// TODO: this is some BS control code, merge new from APck
 	public static void SetOverrideX(IMyGyro gyro, Vector3 settings, Vector3D angV)
 	{
-		float yaw = settings.Y;
-		float pitch = settings.X;
-		float roll = settings.Z;
+		var yaw = settings.Y;
+		var pitch = settings.X;
+		var roll = settings.Z;
 
 		var rm = IsLargeGrid ? 30 : 60;
 		var acc = new Vector3D(1.92f, 1.92f, 1.92f);
@@ -2442,7 +2449,7 @@ static class VectorOpsHelper
 	public static Vector3D GetPredictedImpactPoint(Vector3D meTranslation, Vector3D meVel, Vector3D targetCenter, Vector3D targetVelocity,
 			Vector3D munitionVel, bool compensateOwnVel)
 	{
-		double munitionSpeed = Vector3D.Dot(Vector3D.Normalize(targetCenter - meTranslation), munitionVel);
+		var munitionSpeed = Vector3D.Dot(Vector3D.Normalize(targetCenter - meTranslation), munitionVel);
 		if (munitionSpeed < 30)
 			munitionSpeed = 30;
 		return GetPredictedImpactPoint(meTranslation, meVel, targetCenter, targetVelocity, munitionSpeed, compensateOwnVel);
@@ -2451,10 +2458,10 @@ static class VectorOpsHelper
 	public static Vector3D GetPredictedImpactPoint(Vector3D origin, Vector3D originVel, Vector3D targetCenter, Vector3D targetVelocity,
 			double munitionSpeed, bool compensateOwnVel)
 	{
-		double currentDistance = Vector3D.Distance(origin, targetCenter);
-		Vector3D target = targetCenter - origin;
-		Vector3D targetNorm = Vector3D.Normalize(target);
-		Vector3D assumedPosition = targetCenter;
+		var currentDistance = Vector3D.Distance(origin, targetCenter);
+		var target = targetCenter - origin;
+		var targetNorm = Vector3D.Normalize(target);
+		var assumedPosition = targetCenter;
 
 		Vector3D velNorm;
 
@@ -2478,10 +2485,6 @@ static class VectorOpsHelper
 		}
 
 		return assumedPosition;
-	}
-	public static string GetGPSString(string name, Vector3D p, Color c)
-	{
-		return $"GPS:{name}:{p.X}:{p.Y}:{p.Z}:#{c.R:X02}{c.G:X02}{c.B:X02}:";
 	}
 
 }
@@ -2513,26 +2516,17 @@ string FormatNumberToNeatString(float value, string measure = "")
 {
 	string valueString;
 	if (Math.Abs(value) >= 1000000)
-	{
-		if (!string.IsNullOrEmpty(measure))
-			valueString = string.Format("{0:0.##} M{1}", value / 1000000, measure);
-		else
-			valueString = string.Format("{0:0.##}M", value / 1000000);
-	}
+    {
+        valueString = !string.IsNullOrEmpty(measure) ? $"{value / 1000000:0.##} M{measure}" : $"{value / 1000000:0.##}M";
+    }
 	else if (Math.Abs(value) >= 1000)
-	{
-		if (!string.IsNullOrEmpty(measure))
-			valueString = string.Format("{0:0.##} k{1}", value / 1000, measure);
-		else
-			valueString = string.Format("{0:0.##}k", value / 1000);
-	}
+    {
+        valueString = !string.IsNullOrEmpty(measure) ? $"{value / 1000:0.##} k{measure}" : $"{value / 1000:0.##}k";
+    }
 	else
-	{
-		if (!string.IsNullOrEmpty(measure))
-			valueString = string.Format("{0:0.##} {1}", value, measure);
-		else
-			valueString = string.Format("{0:0.##}", value);
-	}
+    {
+        valueString = !string.IsNullOrEmpty(measure) ? $"{value:0.##} {measure}" : $"{value:0.##}";
+    }
 	return valueString;
 }
 
@@ -2576,7 +2570,7 @@ public static class E
 	{
 		if (!string.IsNullOrEmpty(buff))
 		{
-			var h = UserCtrlTest.ctrls.Where(x => x.IsUnderControl).FirstOrDefault() as IMyTextSurfaceProvider;
+			var h = UserCtrlTest.ctrls.FirstOrDefault(x => x.IsUnderControl) as IMyTextSurfaceProvider;
 			if ((h != null) && (h.SurfaceCount > 0))
 				h.GetSurface(0).WriteText(buff);
 			buff = "";
@@ -2763,7 +2757,7 @@ public class APckUnit
 		UserCtrlTest.Init(ctrls);
 
 		antenna = GetCoreC<IMyRadioAntenna>(f).FirstOrDefault();
-		docker = GetCoreC<IMyShipConnector>(f).First();
+		docker = GetCoreC<IMyShipConnector>(f).FirstOrDefault(b => b.CustomName.Contains(DockHostTag)) ?? GetCoreC<IMyShipConnector>(f).First();
 
 		wh = GetCoreC<IMyWarhead>(f);
 
@@ -2777,7 +2771,7 @@ public class APckUnit
 		thrusters.AddRange(GetCoreC<IMyThrust>(f));
 		thrusters.AddRange(GetCoreC<IMyArtificialMassBlock>(f));
 
-		string tag = Variables.Get<string>("ggen-tag");
+		var tag = Variables.Get<string>("ggen-tag");
 		if (!string.IsNullOrEmpty(tag))
 		{
 			var g = new List<IMyGravityGenerator>();
@@ -2981,7 +2975,7 @@ public class FSM
 			PositionShifter = p =>
 			{
 				var bs = new BoundingSphereD(GetNTV("wingman").OrientationUnit.Value.Translation, 30);
-				return VectorOpsHelper.GetTangFreeDestinantion(PC.Fw.WorldMatrix, p, bs);
+				return VectorOpsHelper.GetTangFreeDestination(PC.Fw.WorldMatrix, p, bs);
 			},
 			TranslationOverride = () => PC.Fw.GetPosition()
 		};
@@ -3174,15 +3168,22 @@ public class PillockController
 
 	State state = State.Disabled;
 	public void SetState(State newState)
-	{
-		if (newState == State.WP)
-			TakeControl();
-		else if (newState == State.Inert)
-			ReleaseControl(false);
-		else if (newState == State.Disabled)
-			ReleaseControl();
-		state = newState;
-	}
+    {
+        switch (newState)
+        {
+            case State.WP:
+                TakeControl();
+                break;
+            case State.Inert:
+                ReleaseControl(false);
+                break;
+            case State.Disabled:
+                ReleaseControl();
+                break;
+        }
+
+        state = newState;
+    }
 
 	public void TrySetState(string stateName)
 	{
@@ -3241,8 +3242,8 @@ public class PillockController
 	int currentTick;
 	IMyGyro forwardGyro;
 	IMyTerminalBlock MainAntenna;
-	public IMyTerminalBlock Fw { get { return forwardGyro; } }
-	public Vector3D Destination;
+	public IMyTerminalBlock Fw => forwardGyro;
+    public Vector3D Destination;
 	public Vector3D Pip;
 	public Vector3D ThrustDest;
 	public Vector3D PosShift;
@@ -3258,16 +3259,13 @@ public class PillockController
 
 		BH = bh;
 
-		MyPlanetElevation dElevation = new MyPlanetElevation();
+		var dElevation = new MyPlanetElevation();
 		double elevation;
 		RemCon.TryGetPlanetElevation(dElevation, out elevation);
 		Vector3D planetPos;
 		RemCon.TryGetPlanetPosition(out planetPos);
 
-		Func<Vector3D> approachVelocity = null; // for PIP
-		bool fRoll = false;
-		float? speedLimit = null;
-		TargetTelemetry currentTargetVectors = null;
+        TargetTelemetry currentTargetVectors = null;
 
 		switch (state)
 		{
@@ -3287,13 +3285,13 @@ public class PillockController
 
 					var av = Vector3D.TransformNormal(RemCon.GetShipVelocities().AngularVelocity, MatrixD.Transpose(Fw.WorldMatrix));
 					av = new Vector3D(Math.Abs(av.X), Math.Abs(av.Y), Math.Abs(av.Z));
-					var anacc = (av - prevAng) / Dt;
+					var anacc = (av - prevAng) / Dt; //TODO: this is never used.
 					prevAng = av;
 
-					approachVelocity = wp.ApproachVelocity;
+					var approachVelocity = wp.ApproachVelocity; // for PIP
 					var aimpointShifter = wp.AimpointShifter;
-					fRoll = wp.fRoll;
-					speedLimit = wp.SpeedLimit;
+					var fRoll = wp.fRoll;
+					var speedLimit = wp.SpeedLimit;
 					if (wp.TargetFeed != null)
 						currentTargetVectors = wp.TargetFeed();
 
@@ -3319,8 +3317,8 @@ public class PillockController
 						var mePos = (wp.TranslationOverride != null) ? wp.TranslationOverride() : Fw.GetPosition();
 						if ((approachVelocity != null) && (targetVelocity.HasValue) && (targetVelocity.Value.Length() > 0))
 						{
-							Vector3D targetCenter = point;
-							Vector3D pp = VectorOpsHelper.GetPredictedImpactPoint(
+							var targetCenter = point;
+							var pp = VectorOpsHelper.GetPredictedImpactPoint(
 								mePos,
 								Velocity,
 								targetCenter,
@@ -3340,8 +3338,8 @@ public class PillockController
 						else
 							PosShift = point;
 
-						double origD = (point - mePos).Length();
-						double shiftD = (PosShift - mePos).Length();
+						var origD = (point - mePos).Length();
+						var shiftD = (PosShift - mePos).Length();
 
 						if (DbgIgc != 0)
 							DBG = $"origD: {origD:f1}\nshiftD: {shiftD:f1}";
@@ -3367,13 +3365,13 @@ public class PillockController
 						if (!VolThrust && (ThrustDest != Fw.WorldMatrix.Translation))
 							AimPoint = ThrustDest;
 
-						Vector3D threeComponentCorrection = Vector3D.Zero;
+						var threeComponentCorrection = Vector3D.Zero;
 						var toTarget = AimPoint - Fw.WorldMatrix.Translation;
 						if (toTarget != Vector3D.Zero)
 						{
 							var ttN = Vector3D.Normalize(toTarget);
 							var desM = MatrixD.CreateFromDir(ttN);
-							Vector3D ctrlError = Vector3D.Zero;
+							var ctrlError = Vector3D.Zero;
 							var up = wp.SuggestedUpNorm?.Invoke() ?? Vector3D.Zero;
 							threeComponentCorrection = VectorOpsHelper.GetAnglesToPointMrot(ttN, gridFov, Fw.WorldMatrix, up, ref ctrlError);
 							ctrlError.Z = 0;
@@ -3438,28 +3436,28 @@ public class PillockController
 			return;
 		}
 
-		float mass = RemCon.CalculateShipMass().PhysicalMass;
-		BoundingBoxD accCap = _ts().GetCapacityBB(mass);
+		var mass = RemCon.CalculateShipMass().PhysicalMass;
+		var accCap = _ts().GetCapacityBB(mass);
 		if (accCap.Volume == 0)
 			return;
 
-		Vector3D localGVector = Vector3D.Zero;
+		var localGVector = Vector3D.Zero;
 		if (NG != null)
 		{
 			localGVector = Vector3D.TransformNormal(NG.Value, invMatrix);
 			accCap += -localGVector;
 		}
 
-		Vector3D dbgReject = Vector3D.Zero;
-		Vector3D dbgTVbase = Vector3D.Zero;
+		var dbgReject = Vector3D.Zero;
+		var dbgTVbase = Vector3D.Zero;
 
-		Vector3D overrideVector = new Vector3D();
+		var overrideVector = new Vector3D();
 		if (toTarget.Length() > double.Epsilon)
 		{
-			Vector3D zeroBasedTargetPoint = Vector3D.TransformNormal(toTarget, invMatrix);
+			var zeroBasedTargetPoint = Vector3D.TransformNormal(toTarget, invMatrix);
 
-			RayD rayToCenter = new RayD(-zeroBasedTargetPoint * (MaxAccelInProximity ? 1000 : 1), Vector3D.Normalize(zeroBasedTargetPoint));
-			RayD rayToCenterInv = new RayD(zeroBasedTargetPoint * (MaxBrakeInProximity ? 1000 : 1), Vector3D.Normalize(-zeroBasedTargetPoint));
+			var rayToCenter = new RayD(-zeroBasedTargetPoint * (MaxAccelInProximity ? 1000 : 1), Vector3D.Normalize(zeroBasedTargetPoint));
+			var rayToCenterInv = new RayD(zeroBasedTargetPoint * (MaxBrakeInProximity ? 1000 : 1), Vector3D.Normalize(-zeroBasedTargetPoint));
 
 			var j = rayToCenterInv.Intersects(accCap);
 			var i = rayToCenter.Intersects(accCap);
@@ -3472,7 +3470,7 @@ public class PillockController
 
 			var toOppositeTargetCapacity = reversePoint.Length();
 
-			Vector3D reject = Vector3D.Reject(localVel, Vector3D.Normalize(zeroBasedTargetPoint));
+			var reject = Vector3D.Reject(localVel, Vector3D.Normalize(zeroBasedTargetPoint));
 
 			if (targetVel.HasValue)
 			{
@@ -3487,11 +3485,11 @@ public class PillockController
 
 			var relativeSpeed = Vector3D.Dot(relativeVel, Vector3D.Normalize(zeroBasedTargetPoint));
 
-			bool closingDistance = relativeSpeed > 0;
-			bool accelerate = true;
+			var closingDistance = relativeSpeed > 0;
+			var accelerate = true;
 
 			var stoppingPathAtCurrentSpeed = Math.Pow(Math.Max(0, relativeSpeed), 2) / (2 * toOppositeTargetCapacity * StoppingPowerQuotient);
-			var padding = toTarget.Length() - stoppingPathAtCurrentSpeed;
+			var padding = toTarget.Length() - stoppingPathAtCurrentSpeed; // TODO: unused
 
 			if (DbgIgc != 0)
 			{
@@ -3629,6 +3627,7 @@ void CheckExpireNTV()
 
 Dictionary<string, TargetTelemetry> NamedTeleData = new Dictionary<string, TargetTelemetry>(); ///< Live telemetry about the (potentially moving) docking port at the base.
 
+// TODO: this is never used. Future feature?
 public struct TeleDto
 {
 	public Vector3D? pos;
@@ -3694,7 +3693,7 @@ public class TargetTelemetry
 		EntityId = meta.Item2;
 		//var tickStamp = meta.Item3;
 		Type = (MyDetectedEntityType)meta.Item4;
-		TeleMetaFlags tm = (TeleMetaFlags)meta.Item5;
+		var tm = (TeleMetaFlags)meta.Item5;
 		SetPosition(igcDto.Item2, localTick);
 		if (HasFlag(tm, TeleMetaFlags.HasVelocity))
 		{
@@ -3776,8 +3775,8 @@ public class ThrusterSelector
 	}
 	public BoundingBoxD GetCapacityBB(float mass)
 	{
-		Vector3D min = new Vector3D(-caps[5], -caps[3], -caps[1]) / mass;
-		Vector3D max = new Vector3D(caps[4], caps[2], caps[0]) / mass;
+		var min = new Vector3D(-caps[5], -caps[3], -caps[1]) / mass;
+		var max = new Vector3D(caps[4], caps[2], caps[0]) / mass;
 
 		return new BoundingBoxD(min, max);
 	}
@@ -3793,7 +3792,7 @@ public class ThrusterSelector
 	public ThrusterSelector(IMyTerminalBlock forwardFacingBlock, List<IMyTerminalBlock> hw)
 	{
 		//this.gts = gts;
-		MatrixD wm = forwardFacingBlock.WorldMatrix;
+		var wm = forwardFacingBlock.WorldMatrix;
 
 		Func<Vector3D, List<IAccelerator>> getT = fw =>
 		{
@@ -3979,10 +3978,10 @@ static class UserCtrlTest
 	}
 	public static Vector3 GetUserCtrlVector(MatrixD fwRef)
 	{
-		Vector3 res = new Vector3();
+		var res = new Vector3();
 		if (Toggle.C.Check("ignore-user-thruster"))
 			return res;
-		var c = ctrls.Where(x => x.IsUnderControl).FirstOrDefault();
+		var c = ctrls.FirstOrDefault(x => x.IsUnderControl);
 		if (c != null && (c.MoveIndicator != Vector3.Zero))
 			return Vector3D.TransformNormal(c.MoveIndicator, fwRef * MatrixD.Transpose(c.WorldMatrix));
 		return res;
